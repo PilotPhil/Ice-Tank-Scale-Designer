@@ -112,17 +112,26 @@
   .card h3::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--orange);flex:0 0 auto}
   .ref-card{background:linear-gradient(180deg,#f7fbfc 0%,#fff 55%);border-color:#cfe2e8}
   .ref-card h3::before{background:var(--teal)}
-  .criteria{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
-  .criteria > div{background:#eef7f9;border:1px solid #d7e9ee;border-radius:7px;padding:6px 8px;min-width:0}
-  .criteria em{display:block;font-style:normal;font-size:9px;color:var(--teal);font-weight:700;letter-spacing:.06em;text-transform:uppercase}
-  .criteria code{display:block;font-family:Consolas,"Cascadia Mono",monospace;font-size:10.5px;color:#173a5e;white-space:nowrap;margin-top:1px}
-  .criteria small{display:block;font-size:9px;color:var(--muted);margin-top:1px}
-  .scale-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
-  .scale-item{display:flex;justify-content:space-between;align-items:baseline;gap:6px;padding:4px 0;border-bottom:1px dashed #e7ecf2;font-size:10.5px;min-width:0}
-  .scale-item span{color:var(--muted);line-height:1.3}
-  .scale-item b{font-family:Consolas,"Cascadia Mono",monospace;font-size:11px;color:var(--navy);white-space:nowrap;font-weight:650}
-  .scale-item b.mult{color:var(--orange)}
-  .ref-note{font-size:9.5px;color:var(--muted);line-height:1.55;margin:7px 0 0}
+  .ref-tag{
+    display:inline-block;margin-left:6px;padding:1px 5px;border-radius:999px;
+    background:#e6f4f7;color:var(--teal);font-size:8px;font-weight:700;
+    letter-spacing:.03em;vertical-align:1px;white-space:nowrap;
+  }
+  .scale-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10px;line-height:1.35}
+  .scale-table th{
+    padding:4px 5px;border:1px solid #d7e9ee;background:#eef7f9;color:var(--teal);
+    font-size:9px;font-weight:700;letter-spacing:.05em;text-align:left;
+  }
+  .scale-table th:first-child,.scale-table td:first-child{width:33%}
+  .scale-table th:last-child,.scale-table td:last-child{width:67%}
+  .scale-table td{padding:2.5px 5px;border:1px solid #e1e8ef;vertical-align:middle}
+  .scale-table td:first-child{color:var(--muted);white-space:nowrap}
+  .scale-table td:last-child{
+    font-family:Consolas,"Cascadia Mono",monospace;color:var(--navy);
+    font-size:10px;white-space:nowrap;
+  }
+  .scale-table tr:nth-child(even) td{background:#fbfcfd}
+  .scale-table i{font-style:italic;color:#4a5866}
   .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px 10px}
   .field{display:flex;flex-direction:column;gap:4px;min-width:0}
   .field-label{font-size:10.5px;color:var(--muted);display:flex;justify-content:space-between;gap:6px;line-height:1.3}
@@ -376,30 +385,27 @@
       <div id="inputGroups"></div>
 
       <section class="card ref-card" aria-label="相似准则与比尺">
-        <h3>相似准则与比尺</h3>
-        <div class="criteria">
-          <div>
-            <em>Froude</em>
-            <code>Fr = V / √(gL)</code>
-            <small>重力 / 惯性力</small>
-          </div>
-          <div>
-            <em>Cauchy</em>
-            <code>Ca = ρV² / E</code>
-            <small>惯性力 / 弹性力</small>
-          </div>
-        </div>
-        <div class="scale-grid">
-          <div class="scale-item"><span>长度 L / 冰厚 h</span><b>÷ λ</b></div>
-          <div class="scale-item"><span>应力 σ / 强度 σ<sub>f</sub></span><b>÷ λ</b></div>
-          <div class="scale-item"><span>弹模 E</span><b>÷ λ</b></div>
-          <div class="scale-item"><span>速度 V / 时间 t</span><b>÷ √λ</b></div>
-          <div class="scale-item"><span>力 F</span><b>÷ λ³</b></div>
-          <div class="scale-item"><span>功率 P</span><b>÷ λ<sup>3.5</sup></b></div>
-          <div class="scale-item"><span>应变率 ε̇</span><b class="mult">× √λ</b></div>
-          <div class="scale-item"><span>密度 ρ / 摩擦 μ</span><b>不变</b></div>
-        </div>
-        <p class="ref-note">模型值 = 原型值 ÷ …；应变率是例外：模型值 = 原型值 × √λ。强度只缩 λ 倍，不是 λ³。</p>
+        <h3>相似准则与比尺 <span class="ref-tag">Froude + Cauchy</span></h3>
+        <table class="scale-table">
+          <thead><tr><th>变量</th><th>比尺</th></tr></thead>
+          <tbody>
+            <tr><td>冰厚 <i>h</i></td><td>[h]<sub>P</sub> = λ[h]<sub>M</sub></td></tr>
+            <tr><td>抗压强度 <i>σ</i><sub>c</sub></td><td>[σ<sub>c</sub>]<sub>P</sub> = λ[σ<sub>c</sub>]<sub>M</sub></td></tr>
+            <tr><td>抗弯强度 <i>σ</i><sub>f</sub></td><td>[σ<sub>f</sub>]<sub>P</sub> = λ[σ<sub>f</sub>]<sub>M</sub></td></tr>
+            <tr><td>抗剪强度 <i>σ</i><sub>s</sub></td><td>[σ<sub>s</sub>]<sub>P</sub> = λ[σ<sub>s</sub>]<sub>M</sub></td></tr>
+            <tr><td>弹性模量 <i>E</i></td><td>[E]<sub>P</sub> = λ[E]<sub>M</sub></td></tr>
+            <tr><td>速度 <i>V</i></td><td>[V]<sub>P</sub> = λ<sup>1/2</sup>[V]<sub>M</sub></td></tr>
+            <tr><td>时间 <i>T</i></td><td>[T]<sub>P</sub> = λ<sup>1/2</sup>[T]<sub>M</sub></td></tr>
+            <tr><td>力 <i>F</i></td><td>[F]<sub>P</sub> = λ<sup>3</sup>[F]<sub>M</sub></td></tr>
+            <tr><td>质量 <i>M</i></td><td>[M]<sub>P</sub> = λ<sup>3</sup>[M]<sub>M</sub></td></tr>
+            <tr><td>断裂韧性 <i>K</i><sub>IC</sub></td><td>[K<sub>IC</sub>]<sub>P</sub> = λ<sup>3/2</sup>[K<sub>IC</sub>]<sub>M</sub></td></tr>
+            <tr><td>加速度 <i>a</i></td><td>[a]<sub>P</sub> = [a]<sub>M</sub></td></tr>
+            <tr><td><i>E</i>/<i>σ</i><sub>f</sub> 比</td><td>[E/σ<sub>f</sub>]<sub>P</sub> = [E/σ<sub>f</sub>]<sub>M</sub></td></tr>
+            <tr><td>摩擦系数 <i>f</i></td><td>[f]<sub>P</sub> = [f]<sub>M</sub></td></tr>
+            <tr><td>密度 <i>ρ</i></td><td>[ρ]<sub>P</sub> = [ρ]<sub>M</sub></td></tr>
+            <tr><td>泊松比 <i>ν</i></td><td>[ν]<sub>P</sub> = [ν]<sub>M</sub></td></tr>
+          </tbody>
+        </table>
       </section>
     </aside>
 
@@ -684,7 +690,6 @@ V<sub>m</sub> = V<sub>p</sub> / √λ &nbsp;&nbsp;|&nbsp;&nbsp; σ<sub>m</sub> =
   const GROUPS = [
     {
       id: 'proto', title: '原型条件',
-      hint: '单位提示：航速 1 kn ≈ 0.514 m/s；冰厚用 m；弹模用 GPa。',
       fields: [
         { key: 'Lp',   label: '原型船长',   sym: 'L_p',      unit: 'm',      min: 10,  max: 600,  step: 0.1 },
         { key: 'Bp',   label: '原型船宽',   sym: 'B_p',      unit: 'm',      min: 3,   max: 80,   step: 0.1 },
