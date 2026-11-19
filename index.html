@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>冰池缩尺比设计器 · Ice Tank Scale Designer</title>
+<style>
+  :root{
+    --bg:#f3f6f9;
+    --panel:#ffffff;
+    --ink:#17212b;
+    --muted:#66727f;
+    --line:#dde4ec;
+    --navy:#0f2740;
+    --navy2:#173a5e;
+    --teal:#1f7a8c;
+    --orange:#e8873a;
+    --red:#c0392b;
+    --green:#2e7d5b;
+    --amber:#b7791f;
+    --shadow:0 8px 24px rgba(15,39,64,.07);
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    font-family:"Segoe UI","Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1200px 600px at 88% -12%, rgba(31,122,140,.10), transparent 60%),
+      radial-gradient(900px 500px at -5% 0%, rgba(232,135,58,.08), transparent 55%),
+      var(--bg);
+    min-height:100vh;
+  }
+  button{font-family:inherit}
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    position:sticky;top:0;z-index:50;
+    display:flex;align-items:center;justify-content:space-between;gap:20px;
+    padding:13px 30px;
+    background:linear-gradient(120deg,#0d2238 0%,#123453 55%,#17456b 100%);
+    color:#fff;
+    box-shadow:0 8px 30px rgba(8,22,38,.18);
+  }
+  .brand{display:flex;align-items:center;gap:14px;min-width:0}
+  .logo{width:42px;height:42px;flex:0 0 auto;filter:drop-shadow(0 3px 6px rgba(0,0,0,.2))}
+  .brand h1{font-size:18px;margin:0;letter-spacing:.02em;white-space:nowrap}
+  .brand p{margin:2px 0 0;font-size:10.5px;color:#a9c3d8;letter-spacing:.12em;text-transform:uppercase}
+  .topbar-actions{display:flex;align-items:center;gap:10px}
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:7px;
+    height:34px;padding:0 14px;border-radius:8px;border:1px solid transparent;
+    font-size:12px;cursor:pointer;transition:all .15s;white-space:nowrap;
+  }
+  .btn svg{width:14px;height:14px}
+  .btn-ghost{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18);color:#dce9f3}
+  .btn-ghost:hover{background:rgba(255,255,255,.14)}
+  .btn-theory{background:rgba(232,135,58,.95);border-color:rgba(232,135,58,.95);color:#fff;font-weight:600}
+  .btn-theory:hover{background:#f0954a;transform:translateY(-1px)}
+  .btn-primary{background:var(--teal);border-color:var(--teal);color:#fff;font-weight:600}
+  .btn-primary:hover{background:#23899d;transform:translateY(-1px)}
+  .btn-outline{background:#fff;border-color:var(--line);color:var(--navy)}
+  .btn-outline:hover{border-color:var(--teal);color:var(--teal)}
+  .link-btn{
+    background:none;border:none;color:var(--teal);font-size:11px;cursor:pointer;
+    padding:3px 0;border-bottom:1px dotted rgba(31,122,140,.45);
+  }
+  .link-btn:hover{border-bottom-style:solid}
+
+  /* ---------- layout ---------- */
+  .page{max-width:1500px;margin:0 auto;padding:22px 26px 70px}
+  .kpi-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}
+  .kpi{
+    position:relative;overflow:hidden;background:var(--panel);border:1px solid var(--line);
+    border-radius:var(--radius);padding:13px 16px 12px;box-shadow:var(--shadow);
+  }
+  .kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--teal)}
+  .kpi.orange::before{background:var(--orange)}
+  .kpi.navy::before{background:var(--navy2)}
+  .kpi.green::before{background:var(--green)}
+  .kpi.red::before{background:var(--red)}
+  .k-label{font-size:10.5px;color:var(--muted);letter-spacing:.08em}
+  .k-value{font-size:26px;font-weight:750;line-height:1.18;margin-top:3px;font-variant-numeric:tabular-nums;color:var(--navy)}
+  .k-value small{font-size:13px;font-weight:600;color:var(--muted);margin-left:3px}
+  .k-sub{font-size:10.5px;color:var(--muted);margin-top:3px;line-height:1.35}
+  .k-sub .chip{margin-left:2px}
+
+  .workspace{display:grid;grid-template-columns:358px minmax(0,1fr);gap:18px;align-items:start}
+  .inputs{position:sticky;top:82px;max-height:calc(100vh - 98px);overflow:auto;padding-right:4px}
+  .inputs::-webkit-scrollbar{width:6px}
+  .inputs::-webkit-scrollbar-thumb{background:#c9d4df;border-radius:99px}
+  .inputs .panel-head{margin-bottom:8px}
+  .input-tabs{display:flex;gap:4px;background:#e9eef4;border-radius:9px;padding:3px;margin-bottom:10px}
+  .input-tabs button{
+    flex:1;border:none;background:transparent;padding:7px 4px;border-radius:7px;
+    font-size:11.5px;color:#5b6875;cursor:pointer;transition:all .15s;white-space:nowrap;
+  }
+  .input-tabs button:hover{color:var(--navy)}
+  .input-tabs button.active{background:#fff;color:var(--navy);font-weight:650;box-shadow:0 2px 6px rgba(15,39,64,.08)}
+
+  /* ---------- cards ---------- */
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px 15px;box-shadow:var(--shadow);margin-bottom:13px;
+  }
+  .card h3{
+    font-size:12.5px;margin:0 0 11px;color:var(--navy);display:flex;align-items:center;gap:8px;
+    letter-spacing:.02em;
+  }
+  .card h3::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--orange);flex:0 0 auto}
+  .ref-card{background:linear-gradient(180deg,#f7fbfc 0%,#fff 55%);border-color:#cfe2e8}
+  .ref-card h3::before{background:var(--teal)}
+  .criteria{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+  .criteria > div{background:#eef7f9;border:1px solid #d7e9ee;border-radius:7px;padding:6px 8px;min-width:0}
+  .criteria em{display:block;font-style:normal;font-size:9px;color:var(--teal);font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+  .criteria code{display:block;font-family:Consolas,"Cascadia Mono",monospace;font-size:10.5px;color:#173a5e;white-space:nowrap;margin-top:1px}
+  .criteria small{display:block;font-size:9px;color:var(--muted);margin-top:1px}
+  .scale-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+  .scale-item{display:flex;justify-content:space-between;align-items:baseline;gap:6px;padding:4px 0;border-bottom:1px dashed #e7ecf2;font-size:10.5px;min-width:0}
+  .scale-item span{color:var(--muted);line-height:1.3}
+  .scale-item b{font-family:Consolas,"Cascadia Mono",monospace;font-size:11px;color:var(--navy);white-space:nowrap;font-weight:650}
+  .scale-item b.mult{color:var(--orange)}
+  .ref-note{font-size:9.5px;color:var(--muted);line-height:1.55;margin:7px 0 0}
+  .field-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px 10px}
+  .field{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .field-label{font-size:10.5px;color:var(--muted);display:flex;justify-content:space-between;gap:6px;line-height:1.3}
+  .field-label em{font-style:normal;color:#8a97a6;font-family:Consolas,"Cascadia Mono",monospace;font-size:9.5px;white-space:nowrap}
+  .input-wrap{position:relative;display:flex;align-items:center}
+  .input-wrap input,.input-wrap select{
+    width:100%;height:33px;border:1px solid var(--line);border-radius:8px;
+    padding:0 8px;font-size:12.5px;color:var(--ink);background:#fbfcfd;outline:none;
+    transition:border-color .15s,box-shadow .15s;font-variant-numeric:tabular-nums;
+  }
+  .input-wrap input:focus,.input-wrap select:focus{
+    border-color:var(--teal);box-shadow:0 0 0 3px rgba(31,122,140,.12);background:#fff;
+  }
+  .input-wrap input.has-unit{padding-right:31px}
+  .input-wrap .unit{
+    position:absolute;right:8px;font-size:9.5px;color:#8a97a6;pointer-events:none;
+    background:inherit;padding-left:3px;white-space:nowrap;
+  }
+  .input-wrap select{cursor:pointer;appearance:none;padding-right:26px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2366727f' stroke-width='1.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;background-position:right 9px center;
+  }
+  .hint{font-size:10.5px;color:var(--muted);line-height:1.55;margin:8px 0 0}
+  .hint b{color:var(--navy2)}
+  .field-grid + .hint{margin-top:9px}
+
+  /* ---------- results ---------- */
+  .results{min-width:0}
+  .panel-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:10px}
+  .panel-head h2{font-size:15px;margin:0;color:var(--navy)}
+  .panel-head .sub{font-size:10.5px;color:var(--muted);line-height:1.4}
+  .panel-tools{display:flex;align-items:center;gap:8px}
+
+  .charts{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .chart-card{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:11px 12px 5px;box-shadow:var(--shadow);margin:0;
+  }
+  .chart-card figcaption{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:0 4px 4px}
+  .chart-card figcaption strong{font-size:12px;color:var(--navy)}
+  .chart-card figcaption span{font-size:10px;color:var(--muted);font-family:Consolas,"Cascadia Mono",monospace}
+  .chart-wrap{
+    position:relative;
+  }
+  .chart-wrap svg text,.ladder-wrap svg text{font-family:"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif}
+  .chart-wrap svg{display:block;width:100%;height:auto}
+  .tooltip{
+    position:absolute;pointer-events:none;background:#0f2740;color:#fff;font-size:10.5px;
+    padding:5px 8px;border-radius:6px;opacity:0;transition:opacity .1s;white-space:nowrap;
+    z-index:5;transform:translate(-50%,-112%);box-shadow:0 6px 18px rgba(0,0,0,.2);
+  }
+
+  .ladder-card{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:11px 14px 2px;box-shadow:var(--shadow);margin-top:14px;
+  }
+  .ladder-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:12px;color:var(--navy);font-weight:650;margin-bottom:1px}
+  .ladder-head span{font-size:10px;color:var(--muted);font-weight:400}
+  .ladder-wrap{overflow-x:auto}
+  .ladder-wrap svg{display:block;min-width:740px;width:100%;height:auto}
+
+  /* ---------- lambda control ---------- */
+  .lambda-control{
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:11px 16px;box-shadow:var(--shadow);margin-top:14px;
+  }
+  .lambda-label{font-size:11.5px;color:var(--muted);white-space:nowrap;display:flex;align-items:center;gap:8px}
+  .lambda-label strong{font-size:21px;color:var(--navy);font-variant-numeric:tabular-nums;line-height:1}
+  input[type=range]{flex:1;min-width:190px;accent-color:var(--teal);height:4px;cursor:pointer}
+  .lambda-actions{display:flex;gap:6px;align-items:center}
+  .lambda-actions .btn{height:30px;padding:0 10px;font-size:11px}
+  .lambda-num{width:66px;height:30px;border:1px solid var(--line);border-radius:7px;text-align:center;font-size:12px;font-variant-numeric:tabular-nums;outline:none}
+  .lambda-num:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(31,122,140,.12)}
+
+  /* ---------- verdict ---------- */
+  .verdict{margin-top:14px;border-radius:12px;padding:11px 16px;font-size:12.5px;line-height:1.55;border:1px solid transparent}
+  .verdict.good{background:#eef7f2;border-color:#bfe3d0;color:#1f5d43}
+  .verdict.warn{background:#fff7e8;border-color:#f0d9a8;color:#7a5312}
+  .verdict.bad{background:#fdeeee;border-color:#efc2c2;color:#8a2c2c}
+  .verdict strong{font-weight:700}
+  .verdict .chip{margin-left:4px}
+
+  .result-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:14px;margin-top:14px}
+  dl.result-list{display:grid;grid-template-columns:1fr 1fr;gap:0 18px;margin:0}
+  dl.result-list > div{display:flex;justify-content:space-between;gap:8px;padding:6.5px 0;border-bottom:1px dashed #e7ecf2;font-size:11.5px}
+  dl.result-list dt{color:var(--muted);white-space:nowrap}
+  dl.result-list dd{margin:0;font-weight:650;font-variant-numeric:tabular-nums;text-align:right;color:var(--navy)}
+
+  .check-item{display:flex;gap:9px;align-items:flex-start;padding:6.5px 0;border-bottom:1px dashed #e7ecf2;font-size:11.5px;line-height:1.45}
+  .dot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex:0 0 auto;box-shadow:0 0 0 3px rgba(0,0,0,.03)}
+  .dot.ok{background:var(--green)} .dot.warn{background:var(--amber)} .dot.bad{background:var(--red)}
+  .check-text b{font-weight:650;color:var(--ink)}
+  .check-text span{color:var(--muted)}
+
+  .notes{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+  .note{background:#f8fafc;border:1px solid var(--line);border-left:3px solid var(--teal);border-radius:8px;padding:9px 12px;font-size:11.5px;line-height:1.65;color:#3d4a57}
+  .note.warn{border-left-color:var(--amber);background:#fffaf0}
+  .note.bad{border-left-color:var(--red);background:#fdf4f4}
+  .note b{color:var(--navy)}
+
+  /* ---------- chips ---------- */
+  .chip{display:inline-flex;align-items:center;gap:4px;height:19px;padding:0 7px;border-radius:999px;font-size:10px;font-weight:650;line-height:1;white-space:nowrap}
+  .chip.ok{background:#e3f2e9;color:#1f5d43}
+  .chip.warn{background:#fdf0d5;color:#7a5312}
+  .chip.bad{background:#fbe4e4;color:#8a2c2c}
+  .chip.neutral{background:#e9eef4;color:#425466}
+
+  /* ---------- modal ---------- */
+  .modal-backdrop{
+    position:fixed;inset:0;background:rgba(8,18,30,.58);backdrop-filter:blur(4px);
+    z-index:100;display:flex;padding:26px;overflow:auto;
+  }
+  .modal-backdrop[hidden]{display:none}
+  .modal{
+    width:min(1000px,100%);margin:auto;background:#fff;border-radius:18px;
+    box-shadow:0 30px 80px rgba(0,0,0,.35);display:flex;flex-direction:column;
+    max-height:calc(100vh - 52px);overflow:hidden;
+  }
+  .modal-head{
+    display:flex;justify-content:space-between;align-items:center;gap:16px;
+    padding:16px 26px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#fbfcfd,#fff);
+  }
+  .modal-head h2{margin:0;font-size:17px;color:var(--navy)}
+  .modal-head p{margin:3px 0 0;font-size:10.5px;color:var(--muted)}
+  .modal-close{
+    width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:#fff;
+    color:var(--muted);font-size:20px;line-height:1;cursor:pointer;flex:0 0 auto;
+  }
+  .modal-close:hover{border-color:var(--red);color:var(--red)}
+  .modal-body{padding:6px 32px 42px;overflow:auto;line-height:1.75;font-size:13px;color:#2b3845}
+  .modal-body h3{font-size:14px;color:var(--navy);margin:25px 0 7px;padding-left:10px;border-left:3px solid var(--orange)}
+  .modal-body h4{font-size:12.5px;color:var(--navy2);margin:16px 0 5px}
+  .modal-body p{margin:7px 0}
+  .modal-body ul,.modal-body ol{margin:7px 0;padding-left:22px}
+  .modal-body li{margin:3.5px 0}
+  .modal-body b{color:var(--navy)}
+  .formula{
+    background:#f4f7fa;border:1px solid #e1e8ef;border-radius:8px;padding:9px 14px;
+    font-family:Consolas,"Cascadia Mono",monospace;font-size:12px;line-height:1.75;
+    color:#173a5e;overflow:auto;margin:8px 0;
+  }
+  .modal-body table{width:100%;border-collapse:collapse;font-size:11.5px;margin:8px 0}
+  .modal-body th,.modal-body td{border:1px solid #e1e8ef;padding:6px 8px;text-align:left;vertical-align:top}
+  .modal-body th{background:#f4f7fa;color:var(--navy);font-weight:650}
+  .modal-body tr:nth-child(even) td{background:#fbfcfd}
+  .modal-body a{color:var(--teal);text-decoration:none;border-bottom:1px dotted rgba(31,122,140,.4)}
+  .modal-body a:hover{border-bottom-style:solid}
+  .callout{background:#f4f9fb;border:1px solid #d4e6ec;border-radius:9px;padding:10px 13px;margin:10px 0;font-size:12px;color:#2c4b57}
+  .callout.warn{background:#fffaf0;border-color:#f0d9a8;color:#6e4a10}
+
+  /* ---------- toast ---------- */
+  .toast{
+    position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(18px);
+    background:#0f2740;color:#fff;padding:9px 18px;border-radius:999px;font-size:12px;
+    opacity:0;pointer-events:none;transition:all .25s;z-index:200;box-shadow:0 10px 30px rgba(0,0,0,.25);
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  .footnote{margin-top:22px;font-size:10.5px;color:var(--muted);line-height:1.6;text-align:center}
+
+  /* ---------- responsive ---------- */
+  @media(max-width:1180px){
+    .workspace{grid-template-columns:320px minmax(0,1fr)}
+    .charts{grid-template-columns:1fr}
+  }
+  @media(max-width:900px){
+    .workspace{grid-template-columns:1fr}
+    .inputs{position:static;max-height:none;overflow:visible;padding-right:0}
+    .kpi-row{grid-template-columns:1fr 1fr}
+    .result-grid{grid-template-columns:1fr}
+  }
+  @media(max-width:560px){
+    .page{padding:12px}
+    .topbar{padding:10px 12px;gap:8px}
+    .brand{gap:8px}
+    .brand h1{font-size:14px}
+    .brand p{display:none}
+    .logo{width:34px;height:34px}
+    .topbar-actions{gap:6px}
+    #btnPrint{display:none}
+    .btn-theory{padding:0 10px;font-size:11px}
+    .kpi-row{grid-template-columns:1fr 1fr;gap:9px}
+    .kpi{padding:9px 11px}
+    .k-value{font-size:19px}
+    .k-value small{font-size:11px}
+    .k-sub{font-size:9px;line-height:1.3}
+    .field-grid{grid-template-columns:1fr 1fr}
+    .inputs .panel-head{flex-direction:row;align-items:center}
+    .panel-head{flex-direction:column;align-items:flex-start}
+    .modal-backdrop{padding:10px}
+    .modal-body{padding:4px 18px 30px}
+    .modal-head{padding:14px 18px}
+  }
+
+  /* ---------- print ---------- */
+  @media print{
+    .topbar-actions,.inputs,.lambda-control,.panel-tools,.toast,.modal-backdrop{display:none!important}
+    .logo{display:none}
+    body{background:#fff}
+    .topbar{position:static;background:#fff;color:#000;box-shadow:none;border-bottom:1px solid #ccc}
+    .brand p{color:#555}
+    .page{padding:0;max-width:none}
+    .workspace{display:block}
+    .card,.chart-card,.ladder-card{box-shadow:none;border-color:#ccc;break-inside:avoid}
+    .charts{grid-template-columns:1fr 1fr}
+    .kpi{box-shadow:none;border-color:#ccc}
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+      <circle cx="24" cy="24" r="22" fill="rgba(255,255,255,.08)" stroke="rgba(255,255,255,.35)" stroke-width="1.2"/>
+      <g stroke="#bfe3ef" stroke-width="1.6" stroke-linecap="round">
+        <path d="M24 9v30M10 16.5l28 15M38 16.5l-28 15"/>
+        <path d="M24 14l-4 4M24 14l4 4M24 34l-4-4M24 34l4-4M14.5 19l5 .8M14.5 29l5-.8M33.5 19l-5 .8M33.5 29l-5-.8"/>
+      </g>
+      <circle cx="24" cy="24" r="3.2" fill="#e8873a"/>
+    </svg>
+    <div>
+      <h1>冰池缩尺比设计器</h1>
+      <p>Ice Tank Scale Designer · Froude + Cauchy</p>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn btn-ghost" id="btnPrint" title="打印当前设计结果">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 8V3h10v5M7 17H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="7" y="14" width="10" height="7" rx="1"/></svg>
+      打印
+    </button>
+    <button class="btn btn-theory" id="btnTheory" title="查看相似准则、模型冰限制和公式推导">
+      理论说明
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.5"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="page">
+  <section class="kpi-row" id="kpiRow" aria-label="关键指标"></section>
+
+  <div class="workspace">
+    <aside class="inputs" aria-label="参数输入">
+      <div class="panel-head">
+        <h2>参数输入</h2>
+        <button class="link-btn" id="btnReset">恢复默认</button>
+      </div>
+      <div class="input-tabs" id="inputTabs" role="tablist" aria-label="参数分组"></div>
+      <div id="inputGroups"></div>
+
+      <section class="card ref-card" aria-label="相似准则与比尺">
+        <h3>相似准则与比尺</h3>
+        <div class="criteria">
+          <div>
+            <em>Froude</em>
+            <code>Fr = V / √(gL)</code>
+            <small>重力 / 惯性力</small>
+          </div>
+          <div>
+            <em>Cauchy</em>
+            <code>Ca = ρV² / E</code>
+            <small>惯性力 / 弹性力</small>
+          </div>
+        </div>
+        <div class="scale-grid">
+          <div class="scale-item"><span>长度 L / 冰厚 h</span><b>÷ λ</b></div>
+          <div class="scale-item"><span>应力 σ / 强度 σ<sub>f</sub></span><b>÷ λ</b></div>
+          <div class="scale-item"><span>弹模 E</span><b>÷ λ</b></div>
+          <div class="scale-item"><span>速度 V / 时间 t</span><b>÷ √λ</b></div>
+          <div class="scale-item"><span>力 F</span><b>÷ λ³</b></div>
+          <div class="scale-item"><span>功率 P</span><b>÷ λ<sup>3.5</sup></b></div>
+          <div class="scale-item"><span>应变率 ε̇</span><b class="mult">× √λ</b></div>
+          <div class="scale-item"><span>密度 ρ / 摩擦 μ</span><b>不变</b></div>
+        </div>
+        <p class="ref-note">模型值 = 原型值 ÷ …；应变率是例外：模型值 = 原型值 × √λ。强度只缩 λ 倍，不是 λ³。</p>
+      </section>
+    </aside>
+
+    <section class="results" aria-label="缩尺比设计结果">
+      <div class="panel-head">
+        <div>
+          <h2>缩尺比可行窗口</h2>
+          <div class="sub">拖动 λ 滑杆迭代；黄色带为模型冰能力，青色竖带为可行交集</div>
+        </div>
+        <div class="panel-tools">
+          <button class="btn btn-outline" id="btnCopy" title="复制当前设计摘要">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+            复制摘要
+          </button>
+        </div>
+      </div>
+
+      <div class="charts">
+        <figure class="chart-card">
+          <figcaption>
+            <strong>冰厚约束</strong>
+            <span>h_m = h_p / λ</span>
+          </figcaption>
+          <div class="chart-wrap" id="chartA">
+            <div class="tooltip" id="tipA"></div>
+          </div>
+        </figure>
+        <figure class="chart-card">
+          <figcaption>
+            <strong>强度约束</strong>
+            <span>σ_f,m = σ_f,p / λ</span>
+          </figcaption>
+          <div class="chart-wrap" id="chartB">
+            <div class="tooltip" id="tipB"></div>
+          </div>
+        </figure>
+      </div>
+
+      <div class="ladder-card">
+        <div class="ladder-head">
+          <div>约束交集</div>
+          <span>每条粗线是该约束允许的 λ 区间；竖带是全部约束的交集</span>
+        </div>
+        <div class="ladder-wrap" id="ladder"></div>
+      </div>
+
+      <div class="lambda-control">
+        <div class="lambda-label">当前 λ <strong id="lambdaValue">25.0</strong></div>
+        <input type="range" id="lambdaSlider" min="5" max="70" step="0.1" value="25" aria-label="当前缩尺比">
+        <input class="lambda-num" id="lambdaNumber" type="number" min="5" max="70" step="0.1" value="25" aria-label="输入缩尺比">
+        <div class="lambda-actions">
+          <button class="btn btn-outline" id="btnMinus" title="减小 0.5">−0.5</button>
+          <button class="btn btn-outline" id="btnPlus" title="增大 0.5">+0.5</button>
+          <button class="btn btn-primary" id="btnAuto">采用推荐值</button>
+        </div>
+      </div>
+
+      <div class="verdict" id="verdict"></div>
+
+      <div class="result-grid">
+        <section class="card">
+          <h3>模型主尺度与冰参数</h3>
+          <dl class="result-list" id="resultList"></dl>
+        </section>
+        <section class="card">
+          <h3>逐项校核</h3>
+          <div id="checkList"></div>
+        </section>
+      </div>
+
+      <div class="notes" id="notes"></div>
+    </section>
+  </div>
+
+  <div class="footnote">
+    本工具用于方案筛选与教学演示，不替代水池规程、ITTC 指南和专家评审。正式试验请以模型冰实测参数和不确定度分析为准。
+  </div>
+</main>
+
+<div class="modal-backdrop" id="theoryModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="theoryTitle">
+    <div class="modal-head">
+      <div>
+        <h2 id="theoryTitle">理论说明：冰池缩尺比是怎么定的</h2>
+        <p>相似准则 · 模型冰限制 · 可行窗口 · 参考文献</p>
+      </div>
+      <button class="modal-close" id="btnCloseTheory" aria-label="关闭">×</button>
+    </div>
+    <div class="modal-body" id="theoryBody">
+      <div class="callout">
+        <b>怎么用这个工具：</b>左侧填原型、设施和模型冰参数；右侧两条曲线分别显示冰厚和强度约束；拖动 λ 滑杆迭代，或点“采用推荐值”。青色竖带是三条硬约束的交集；黄色横带是模型冰的能力范围。下方“逐项校核”中的红/黄项需要处理。
+      </div>
+
+      <h3>1. 一句话结论</h3>
+      <p>缩尺比 λ <b>不是由某个公式唯一算出来的</b>。相似准则只规定“一旦选定 λ，冰厚、强度、弹模、速度、力必须按什么比例缩”；λ 本身是在<b>“模型放得下”</b>和<b>“模型冰做得出”</b>两条边界之间夹出来的一个可行窗口。船模破冰试验通常落在 <b>1:20–1:35</b>，其中 1:25、1:30 最常见。</p>
+
+      <h3>2. 相似比尺：Froude + Cauchy</h3>
+      <p>定义 λ = 原型长度 / 模型长度，即 L<sub>p</sub> = λ L<sub>m</sub>。λ = 25 就是“1:25”。在 Froude 相似（重力/惯性力之比相等）和 Cauchy 相似（惯性力/弹性力之比相等）同时成立的条件下：</p>
+
+      <table>
+        <thead><tr><th>物理量</th><th>比尺关系</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>长度 L</td><td>L<sub>p</sub> = λ L<sub>m</sub></td><td>几何缩小 λ 倍</td></tr>
+          <tr><td>冰厚 h</td><td>h<sub>p</sub> = λ h<sub>m</sub></td><td>冰也按 λ 缩</td></tr>
+          <tr><td>速度 V</td><td>V<sub>p</sub> = √λ V<sub>m</sub></td><td>模型速度是原型的 1/√λ</td></tr>
+          <tr><td>时间 t</td><td>t<sub>p</sub> = √λ t<sub>m</sub></td><td>模型时间缩短为原型的 1/√λ</td></tr>
+          <tr><td>力 F</td><td>F<sub>p</sub> = λ³ F<sub>m</sub></td><td>力的比尺是 λ 的三次方</td></tr>
+          <tr><td>应力/强度 σ</td><td>σ<sub>p</sub> = λ σ<sub>m</sub></td><td><b>强度只缩 λ 倍，不是 λ³</b></td></tr>
+          <tr><td>弹性模量 E</td><td>E<sub>p</sub> = λ E<sub>m</sub></td><td>弹模也只缩 λ 倍</td></tr>
+          <tr><td>应变 ε</td><td>ε<sub>p</sub> = ε<sub>m</sub></td><td>应变不变</td></tr>
+          <tr><td>应变率 ε̇</td><td>ε̇<sub>m</sub> = √λ ε̇<sub>p</sub></td><td><b>模型应变率是原型的 √λ 倍</b></td></tr>
+          <tr><td>断裂韧性 K</td><td>K<sub>p</sub> = λ<sup>1.5</sup> K<sub>m</sub></td><td>由 σ√L 推得</td></tr>
+          <tr><td>密度 ρ、摩擦 μ</td><td>ρ<sub>p</sub> = ρ<sub>m</sub>，μ<sub>p</sub> = μ<sub>m</sub></td><td>不缩</td></tr>
+          <tr><td>功率 P</td><td>P<sub>p</sub> = λ<sup>3.5</sup> P<sub>m</sub></td><td>由 F·V 推得</td></tr>
+        </tbody>
+      </table>
+
+      <div class="formula">
+V<sub>m</sub> = V<sub>p</sub> / √λ &nbsp;&nbsp;|&nbsp;&nbsp; σ<sub>m</sub> = σ<sub>p</sub> / λ &nbsp;&nbsp;|&nbsp;&nbsp; E<sub>m</sub> = E<sub>p</sub> / λ &nbsp;&nbsp;|&nbsp;&nbsp; F<sub>m</sub> = F<sub>p</sub> / λ³
+      </div>
+
+      <p>注意两件事：<b>强度按 λ 缩，不是按 λ³</b>；<b>应变率放大 √λ 倍</b>。1:25 时，模型冰的应变率是原型的 5 倍，冰的韧脆转变点和压缩强度峰值都会跟着移动。</p>
+
+      <h3>3. Froude、Cauchy 与 Reynolds</h3>
+      <h4>Froude 数</h4>
+      <p>Fr = V / √(gL)，表示惯性力与重力之比。原型与模型相等，得到 V<sub>m</sub> = V<sub>p</sub>/√λ、t<sub>m</sub> = t<sub>p</sub>/√λ、F<sub>m</sub> = F<sub>p</sub>/λ³。破冰船航速低，但船体抬升、冰排下沉、碎冰翻转都受重力控制，所以 Froude 是基础。</p>
+      <h4>Cauchy 数</h4>
+      <p>Ca = ρV²/E，表示惯性力与弹性力之比。原型与模型相等，得到 E<sub>m</sub> = E<sub>p</sub>/λ；与 Froude 联立得到 σ<sub>m</sub> = σ<sub>p</sub>/λ。</p>
+      <h4>Reynolds 数</h4>
+      <p>Re = VL/ν。若要 Re 也相等，需要 ν<sub>m</sub> = ν<sub>p</sub>/λ<sup>1.5</sup>。水的黏度几乎不变，这个条件做不到；于是 Re<sub>m</sub> = Re<sub>p</sub>/λ<sup>1.5</sup>。低航速下黏性影响相对小，冰池试验通常接受这一点，但高航速、大 λ 时边界层和摩擦的尺度效应会变大。</p>
+      <div class="callout warn">
+        <b>一个常被说错的点：</b>“Froude 和 Cauchy 不能同时满足”这句话不准确。二者可以同时满足，正是它们一起给出了上面的比尺表；真正不能同时满足的是 Froude + Reynolds（因为水的黏度改不了）。工程上真正卡住的，是<b>模型冰材料无法同时实现</b>按 λ 缩小的 E、σ<sub>f</sub>、σ<sub>c</sub>、K<sub>IC</sub> 和应变率响应。所以“缩尺比受限”本质上是<b>材料受限</b>。
+      </div>
+
+      <h3>4. 模型冰：λ 的天花板</h3>
+      <p>海冰的弹性模量与抗弯强度之比大致为 <b>E/σ<sub>f</sub> ≈ 2000–8000</b>，多数报道在 5000 左右。这个比值等于破坏应变 ε<sub>f</sub> ≈ σ<sub>f</sub>/E 的倒数：比值大，冰在很小的应变下就脆断；比值小，冰会先屈服、后破坏，出现残余强度，破冰阻力偏高。</p>
+      <p>Schwarz（1977）提出、后来被 ITTC 相关文献反复引用的经验判据是 <b>E<sub>m</sub>/σ<sub>f,m</sub> ≥ 2000</b>。现实中的模型冰：</p>
+
+      <table>
+        <thead><tr><th>模型冰类型</th><th>E/σ<sub>f</sub> 典型值</th><th>可用 λ（实践）</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>盐水柱状冰（NaCl）</td><td>500–1000</td><td>10–20</td><td>偏低，易韧性破坏；早期 HSVA 只有 200–500</td></tr>
+          <tr><td>尿素柱状冰</td><td>1500–2000（部分报道 2500–3500）</td><td>≤30–35</td><td>国内冰池常用；λ 超过 30 时压缩强度常低 2–3 倍</td></tr>
+          <tr><td>EG/AD/S 冰</td><td>1500–2500</td><td>20–40</td><td>NRC 开发，脆性较好</td></tr>
+          <tr><td>气泡盐冰（HSVA）</td><td>可提高到 2000 以上</td><td>20–40</td><td>微气泡提高脆性、降低密度</td></tr>
+          <tr><td>FGX 细粒冰（Aker）</td><td>1500–2000</td><td>15–35</td><td>可做较厚冰，标称 10–150 mm</td></tr>
+          <tr><td>非冻结合成冰（DUT-1 类）</td><td>可设计到 2000 以上</td><td>10–30</td><td>常温水池；强度 35–65 kPa</td></tr>
+        </tbody>
+      </table>
+
+      <p><b>关键点：E/σ<sub>f</sub> 是材料属性，λ 改变不了它。</b>λ 只决定 E<sub>m</sub> 和 σ<sub>m</sub> 的绝对值。如果模型冰的 E/σ<sub>f</sub> 只有 2000，而原型是 7000，那么无论 λ 取 20 还是 40，E 都会比 Cauchy 要求低约 3.5 倍。换 λ 解决不了，只能换冰种、改工艺（加气泡、回温、控盐度），或者接受这个偏差并在报告里说明。</p>
+
+      <p>其他几个限制：</p>
+      <ul>
+        <li><b>压缩/弯曲强度比 σ<sub>c</sub>/σ<sub>f</sub></b>：压缩主导的试验（冰-结构挤压、冰-桨碰撞）对 λ 更敏感，常用更小的 λ（1:10–1:20）。</li>
+        <li><b>断裂韧性 K<sub>IC</sub></b>：按 λ<sup>1.5</sup> 缩，但模型冰 K<sub>IC</sub> 测量困难，ITTC 也不强制；碎冰块度、裂纹间距不完全相似。</li>
+        <li><b>应变率</b>：模型应变率是原型的 √λ 倍，冰的压缩强度峰值和韧脆转变点都会移动；弯曲试验要求 1–2 s 破坏，就是为了对应原型的加载速率。</li>
+        <li><b>压力-面积效应</b>：挤压破碎时接触压力随面积增大而减小，几何缩尺改变接触面积，这是无法靠相似准则消除的尺度效应。</li>
+      </ul>
+
+      <h3>5. 可行窗口：把边界写在一起</h3>
+      <div class="formula">
+λ<sub>min</sub> = max( L<sub>p</sub>/L<sub>m,max</sub>, &nbsp; h<sub>p</sub>/h<sub>m,max</sub>, &nbsp; σ<sub>f,p</sub>/σ<sub>m,max</sub> )<br>
+λ<sub>max</sub> = min( L<sub>p</sub>/L<sub>m,min</sub>, &nbsp; h<sub>p</sub>/h<sub>m,min</sub>, &nbsp; σ<sub>f,p</sub>/σ<sub>m,min</sub>, &nbsp; 40 )
+      </div>
+      <p>只有 <b>λ<sub>min</sub> ≤ λ ≤ λ<sub>max</sub></b> 才可行。第一项（模型尺寸）给出下限：模型不能大到放不下；第二、三项（冰厚、强度上限）也给出下限：冰不能厚到做不出、强到做不到；冰厚下限、强度下限、尺度效应给出上限：冰不能薄到测不准、弱到失真。</p>
+      <p>典型数值：h<sub>p</sub> = 1.0 m、σ<sub>f,p</sub> = 700 kPa 时，冰厚给出 λ ≤ 50、强度给出 λ ≤ 70，但模型尺寸给出 λ ≥ 20、尺度效应给出 λ ≤ 40，所以窗口约为 <b>20–40</b>。薄冰、弱冰（0.5 m、500 kPa）的窗口会缩到 10–25；厚冰、强冰（1.5 m、1500 kPa）可到 17–40。</p>
+
+      <h3>6. 两条定 λ 的路径</h3>
+      <p><b>路径 A（几何驱动）：</b>λ = L<sub>p</sub>/L<sub>m</sub>。先按池子/拖车能容纳的最大模型长度定 λ，再检查 h<sub>m</sub>、σ<sub>f,m</sub>、E/σ<sub>f</sub> 是否可行。船模破冰试验最常用这条路，因为模型尺寸往往是最硬的约束。</p>
+      <p><b>路径 B（冰强度驱动）：</b>λ = σ<sub>f,p</sub>/σ<sub>f,m,target</sub>。先根据所选模型冰和工艺，定一个可稳定达到的目标强度（例如 20–30 kPa），再用原型强度除回去得到 λ，最后检查模型是否放得下。</p>
+      <p>文献里的例子：Suominen 等（2019）直接写“模型冰抗弯强度取 28 kPa 时，比尺就是 889/28 = 31.57”；Matala &amp; Suominen（2022）的三艘船，λ = 17.50、23.62、20，对应的模型冰目标强度正好是 29、21、25 kPa——λ 本质上就是 500 kPa 除以目标强度。</p>
+
+      <h3>7. 文献中的实际 λ</h3>
+      <table>
+        <thead><tr><th>来源/项目</th><th>原型</th><th>模型比尺</th><th>模型冰厚</th><th>模型冰强度</th></tr></thead>
+        <tbody>
+          <tr><td>哈尔滨工程大学“雪龙”号冲撞破冰</td><td>1.5 m 冰</td><td>1:25</td><td>60 mm</td><td>非冻结可破碎冰</td></tr>
+          <tr><td>张雨晴等（2024），HSVA</td><td>Lpp 222.7 m，1.47 m 冰</td><td>1:29.508</td><td>50 mm</td><td>—</td></tr>
+          <tr><td>Matala &amp; Suominen（2022），FSICR</td><td>1.0 m 级碎冰航道</td><td>1:17.5 / 1:23.6 / 1:20</td><td>—</td><td>29 / 21 / 25 kPa</td></tr>
+          <tr><td>Aker Arctic FGX 厚冰</td><td>2.85 m 冰</td><td>约 1:31.7</td><td>90 mm</td><td>—</td></tr>
+          <tr><td>李志军等（2002），DUT-1</td><td>渤海海冰</td><td>1:10–1:30</td><td>—</td><td>35–65 kPa</td></tr>
+          <tr><td>宋安等（2005），天津大学</td><td>闸墩</td><td>1:10</td><td>36–50 mm</td><td>σ<sub>c</sub> 105–127 kPa</td></tr>
+          <tr><td>肖锦涛等（2026）</td><td>0.95 m 冰</td><td>1:50</td><td>20 mm</td><td>—</td></tr>
+        </tbody>
+      </table>
+      <p>规律：船模破冰/冰阻力以 1:20–1:30 为主；冰对结构物 1:10–1:25；1:40–1:50 只用于薄冰或对局部细节不敏感的场合。λ 的取值高度依赖设施，没有“标准答案”，只有“可行解”。</p>
+
+      <h3>8. 常见误区</h3>
+      <ul>
+        <li><b>λ 越大越省钱。</b>不对。λ 大 → 冰薄 → 模型冰更难做、测量误差更大、E/σ<sub>f</sub> 更难达标、尺度效应更强。</li>
+        <li><b>满足 Froude 就行了。</b>不够。冰的强度、弹模、断裂韧性、应变率都要另行相似。</li>
+        <li><b>E 和 σ 可以独立设定。</b>不行。E/σ<sub>f</sub> 是材料的“固有比”，只能选材料、调工艺，不能像调两个旋钮一样独立调。</li>
+        <li><b>λ 必须取整数。</b>不必。1:29.508、1:31.7、1:22.2 都很常见，是主尺度除以池子能力得到的。</li>
+        <li><b>模型冰强度越低越好。</b>不对。低于约 10–20 kPa，冰会出现不真实的残余强度和韧性破坏，阻力反而偏高。</li>
+        <li><b>试验做完直接按 λ 换算。</b>不行。实际冰厚、强度、弹模与目标值总有偏差，必须按实测值修正；摩擦系数、E/σ<sub>f</sub>、应变率等偏差还要单独说明。</li>
+      </ul>
+
+      <h3>9. 参考文献</h3>
+      <ul>
+        <li>ITTC. <a href="https://www.ittc.info/media/9649/75-02-04-01.pdf" target="_blank" rel="noopener">General Guidance and Introduction to Ice Model Testing, 7.5-02-04-01, Rev. 03, 2021</a>.</li>
+        <li>ITTC. <a href="https://ittc.info/media/9659/75-02-04-02.pdf" target="_blank" rel="noopener">Test Methods for Model Ice Properties, 7.5-02-04-02, Rev. 03, 2021</a>.</li>
+        <li>Wang, J., Lau, M. <a href="https://publications-cnrc.canada.ca/eng/view/object/?id=1dd4a44e-dbb8-4716-a4f2-4301610e70c4" target="_blank" rel="noopener">A state-of-the-art review on ice modeling methodologies employed in refrigerated ice tanks</a>. NRC LM-2007-05, 2007.</li>
+        <li>Izadi, M. <a href="https://aaltodoc.aalto.fi/server/api/core/bitstreams/9b40fab4-f7c8-4d6d-a48d-6920b22ae4f2/content" target="_blank" rel="noopener">Model Ice: Physical mechanisms of formation and mechanical properties</a>. Aalto Doctoral Theses 139/2026.</li>
+        <li>WEGEMT. <a href="https://dev.wegemt.eu/wp-content/uploads/2019/04/7th_WEGEMT_School_on_Ships_and_Structures_in_Ice.pdf" target="_blank" rel="noopener">Seventh Graduate School: Ships and Structures in Ice</a>. Helsinki University of Technology, 1983.</li>
+        <li>Matala, R., Suominen, M. <a href="https://acris.aalto.fi/ws/portalfiles/portal/84708028/1_s2.0_S0165232X22001367_main.pdf" target="_blank" rel="noopener">Investigation of vessel resistance in model scale brash ice channels and comparison to full scale tests</a>. Cold Regions Science and Technology, 2022.</li>
+        <li>李志军, 王永学, 李广伟. <a href="http://skxjz.nhri.cn/cn/article/pdf/preview/1413.pdf" target="_blank" rel="noopener">DUT-1 合成模型冰的弯曲强度和弹性模量实验分析</a>. 水科学进展, 2002, 13(3): 292–297.</li>
+        <li>田于逵, 季少鹏, 王迎晖, 等. <a href="https://www.sciengine.com/MES/doi/10.12111/j.mes.20190253" target="_blank" rel="noopener">CSSRC 小型冰水池中海冰模拟与测试研究</a>. 海洋环境科学, 2021, 40(2): 277–286.</li>
+        <li>张雨晴, 何炎平, 陈哲, 等. 碎冰模型形状对船舶碎冰阻力数值预报的影响. 舰船科学技术, 2024, 46(16): 64–71.</li>
+        <li>Finnish Transport and Communications Agency. <a href="https://www.traficom.fi/sites/default/files/media/regulation/FSICR%20Guidelines%202019.pdf" target="_blank" rel="noopener">Guidelines for the Application of the Finnish-Swedish Ice Class Rules, Appendix 4</a>, 2019.</li>
+      </ul>
+
+      <div class="callout">
+        <b>工具边界：</b>本工具只做“方案筛选”：用 20–90 mm 冰厚、10–100 kPa 强度、E/σ<sub>f</sub> 等经验范围估算可行窗口；正式试验还需要根据水池规程、模型冰实测曲线、摩擦修正和不确定度分析确认。模型冰的 E/σ<sub>f</sub> 是材料属性，工具用输入值计算“按 E/σ 的弹模”，不会强行让 E 满足 Cauchy。
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ============================================================
+     1. 常量、默认值、模型冰预设
+     ============================================================ */
+  const LS_KEY = 'ice-scale-designer-v1';
+  const XMIN = 5, XMAX = 70, YMAX = 160;
+  const CH = { W: 560, H: 320, ML: 62, MR: 18, MT: 18, MB: 44 };
+  const LAD = { W: 1160, ML: 124, MR: 28, MT: 24, MB: 32 };
+
+  const DEFAULTS = {
+    // 原型
+    Lp: 120, Bp: 22, Tp: 8, hp: 1.2, sfp: 700, Ep: 5, Vp: 2.0, scp: 2000, rhoi: 900, mu: 0.1,
+    // 设施
+    Ltank: 40, Btank: 6, Dtank: 2.5, LmMax: 6, LmMin: 3,
+    Vmin: 0.05, Vmax: 1.0, rhow: 1025, Rp: 1500, forceMax: 500,
+    // 模型冰
+    iceType: 'urea', hmMin: 20, hmMax: 90, smMin: 15, smMax: 70, ratio: 1800
+  };
+
+  const ICE_PRESETS = {
+    saline: {
+      name: '盐水柱状冰（NaCl）',
+      hmMin: 20, hmMax: 90, smMin: 20, smMax: 80, ratio: 800,
+      note: 'E/σ 典型 500–1000，偏低，易韧性破坏；λ 通常只能到 15–20。'
+    },
+    urea: {
+      name: '尿素柱状冰',
+      hmMin: 20, hmMax: 90, smMin: 15, smMax: 70, ratio: 1800,
+      note: '国内冰池常用；E/σ 约 1500–2500；λ 建议 ≤ 30–35。'
+    },
+    egads: {
+      name: 'EG/AD/S 冰',
+      hmMin: 20, hmMax: 90, smMin: 20, smMax: 100, ratio: 2000,
+      note: 'NRC 开发；脆性较好，E/σ 约 1500–2500。'
+    },
+    bubble: {
+      name: '气泡盐冰（HSVA）',
+      hmMin: 20, hmMax: 90, smMin: 20, smMax: 100, ratio: 2500,
+      note: '微气泡提高 E/σ 和脆性；适合较宽的 λ 范围。'
+    },
+    fgx: {
+      name: 'FGX 细粒冰（Aker）',
+      hmMin: 15, hmMax: 150, smMin: 15, smMax: 100, ratio: 1800,
+      note: '可做较厚冰；标称冰厚 10–150 mm、强度 10–100 kPa。'
+    },
+    synthetic: {
+      name: '非冻结合成冰（DUT-1 类）',
+      hmMin: 10, hmMax: 60, smMin: 35, smMax: 65, ratio: 2200,
+      note: '常温水池；强度 35–65 kPa，E 约 53 MPa。'
+    },
+    custom: {
+      name: '自定义',
+      hmMin: 20, hmMax: 90, smMin: 10, smMax: 100, ratio: 2000,
+      note: '手动填写模型冰的可行范围。'
+    }
+  };
+
+  const GROUPS = [
+    {
+      id: 'proto', title: '原型条件',
+      hint: '单位提示：航速 1 kn ≈ 0.514 m/s；冰厚用 m；弹模用 GPa。',
+      fields: [
+        { key: 'Lp',   label: '原型船长',   sym: 'L_p',      unit: 'm',      min: 10,  max: 600,  step: 0.1 },
+        { key: 'Bp',   label: '原型船宽',   sym: 'B_p',      unit: 'm',      min: 3,   max: 80,   step: 0.1 },
+        { key: 'Tp',   label: '原型吃水',   sym: 'T_p',      unit: 'm',      min: 1,   max: 30,   step: 0.1 },
+        { key: 'hp',   label: '原型冰厚',   sym: 'h_p',      unit: 'm',      min: 0.05, max: 5,   step: 0.01 },
+        { key: 'sfp',  label: '抗弯强度',   sym: 'σ_f,p',    unit: 'kPa',    min: 50,  max: 5000, step: 10 },
+        { key: 'Ep',   label: '弹性模量',   sym: 'E_p',      unit: 'GPa',    min: 0.1, max: 20,   step: 0.1 },
+        { key: 'Vp',   label: '原型航速',   sym: 'V_p',      unit: 'm/s',    min: 0.1, max: 10,   step: 0.1 },
+        { key: 'scp',  label: '抗压强度',   sym: 'σ_c,p',    unit: 'kPa',    min: 100, max: 10000, step: 50 },
+        { key: 'rhoi', label: '冰密度',     sym: 'ρ_i',      unit: 'kg/m³',  min: 700, max: 980,  step: 5 }
+      ]
+    },
+    {
+      id: 'fac', title: '试验设施',
+      hint: '破冰阻力与测力计量程用于力量程校核；不确定时可保留默认值。',
+      fields: [
+        { key: 'Ltank',    label: '水池长度',     sym: 'L_t',       unit: 'm',     min: 5,    max: 300,   step: 1 },
+        { key: 'Btank',    label: '水池宽度',     sym: 'B_t',       unit: 'm',     min: 2,    max: 50,    step: 0.1 },
+        { key: 'Dtank',    label: '水池深度',     sym: 'D_t',       unit: 'm',     min: 0.5,  max: 15,    step: 0.1 },
+        { key: 'LmMax',    label: '最大模型长',   sym: 'L_m,max',   unit: 'm',     min: 1,    max: 20,    step: 0.1 },
+        { key: 'LmMin',    label: '最小模型长',   sym: 'L_m,min',   unit: 'm',     min: 0.5,  max: 15,    step: 0.1 },
+        { key: 'Vmin',     label: '拖车最低速',   sym: 'V_min',     unit: 'm/s',   min: 0.001, max: 2,    step: 0.01 },
+        { key: 'Vmax',     label: '拖车最高速',   sym: 'V_max',     unit: 'm/s',   min: 0.05, max: 10,    step: 0.05 },
+        { key: 'rhow',     label: '水密度',       sym: 'ρ_w',       unit: 'kg/m³', min: 990,  max: 1060,  step: 1 },
+        { key: 'Rp',       label: '原型破冰阻力', sym: 'R_p',       unit: 'kN',    min: 1,    max: 50000, step: 10 },
+        { key: 'forceMax', label: '测力计量程',   sym: 'F_max',     unit: 'N',     min: 10,   max: 100000, step: 10 }
+      ]
+    },
+    {
+      id: 'ice', title: '模型冰',
+      hint: 'E/σ_f 参考：海冰 2000–8000；盐水冰 500–1000；尿素冰 1500–2500；气泡盐冰可更高。',
+      fields: [
+        { key: 'hmMin', label: '最小冰厚',   sym: 'h_m,min',  unit: 'mm',  min: 2,   max: 80,    step: 1 },
+        { key: 'hmMax', label: '最大冰厚',   sym: 'h_m,max',  unit: 'mm',  min: 20,  max: 200,   step: 1 },
+        { key: 'smMin', label: '最小强度',   sym: 'σ_m,min',  unit: 'kPa', min: 2,   max: 100,   step: 1 },
+        { key: 'smMax', label: '最大强度',   sym: 'σ_m,max',  unit: 'kPa', min: 10,  max: 300,   step: 5 },
+        { key: 'ratio', label: 'E/σ_f 典型', sym: 'E/σ_f',    unit: '—',   min: 300, max: 10000, step: 100 },
+        { key: 'mu',    label: '冰-船摩擦',  sym: 'μ',        unit: '—',   min: 0.01, max: 0.5,  step: 0.01 }
+      ]
+    }
+  ];
+
+  const ICE_KEYS = ['hmMin', 'hmMax', 'smMin', 'smMax', 'ratio'];
+  const FIELD_MAP = {};
+  GROUPS.forEach(g => g.fields.forEach(f => { FIELD_MAP[f.key] = f; }));
+
+  /* ============================================================
+     2. 状态与持久化
+     ============================================================ */
+  let state = Object.assign({}, DEFAULTS);
+  let currentLambda = 25;
+  let applyingPreset = false;
+  let activeGroup = 'proto';
+
+  (function loadState() {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return;
+      const obj = JSON.parse(raw);
+      if (obj && obj.state) {
+        Object.keys(DEFAULTS).forEach(k => {
+          if (obj.state[k] !== undefined && obj.state[k] !== null && obj.state[k] !== '') {
+            state[k] = obj.state[k];
+          }
+        });
+      }
+      if (obj && Number.isFinite(obj.lambda)) currentLambda = obj.lambda;
+      if (!ICE_PRESETS[state.iceType]) state.iceType = 'custom';
+      currentLambda = Math.min(70, Math.max(5, currentLambda));
+    } catch (e) { /* file:// 下 localStorage 可能不可用 */ }
+  })();
+
+  function saveState() {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify({ state, lambda: currentLambda }));
+    } catch (e) { /* ignore */ }
+  }
+
+  /* ============================================================
+     3. 小工具
+     ============================================================ */
+  const $ = id => document.getElementById(id);
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const fmt = (v, d = 1) => Number(v).toFixed(d);
+
+  function charLength(E, h, nu, rhow, g) {
+    // l_c = [ E h^3 / (12 (1-ν²) ρ_w g) ]^(1/4)
+    return Math.pow((E * Math.pow(h, 3)) / (12 * (1 - nu * nu) * rhow * g), 0.25);
+  }
+
+  function nearBoundary(v, lo, hi) {
+    const span = Math.max(hi - lo, 1e-9);
+    return (v - lo) / span < 0.08 || (hi - v) / span < 0.08;
+  }
+
+  function deepCopy(o) { return JSON.parse(JSON.stringify(o)); }
+
+  /* ============================================================
+     4. 计算：约束与模型参数
+     ============================================================ */
+  function constraints(s) {
+    const c = {};
+    c.geomMin = s.Lp / s.LmMax;
+    c.geomMax = s.Lp / s.LmMin;
+    c.hMin = s.hp / (s.hmMax / 1000);
+    c.hMax = s.hp / (s.hmMin / 1000);
+    c.sMin = s.sfp / s.smMax;
+    c.sMax = s.sfp / s.smMin;
+
+    c.lambdaMin = Math.max(c.geomMin, c.hMin, c.sMin);
+    c.lambdaMax = Math.min(c.geomMax, c.hMax, c.sMax);
+    c.feasible = c.lambdaMin <= c.lambdaMax + 1e-9;
+    c.softMax = 40;
+
+    if (c.feasible) {
+      const hi = Math.min(c.lambdaMax, Math.max(c.lambdaMin, c.softMax));
+      c.recommended = Math.sqrt(c.lambdaMin * hi);
+    } else {
+      c.recommended = null;
+    }
+
+    c.rows = [
+      { key: 'geom', label: '模型尺寸', min: c.geomMin, max: c.geomMax, color: '#1f7a8c', note: `${s.LmMin}–${s.LmMax} m` },
+      { key: 'h',    label: '冰厚',     min: c.hMin,    max: c.hMax,    color: '#c0392b', note: `${s.hmMin}–${s.hmMax} mm` },
+      { key: 's',    label: '强度',     min: c.sMin,    max: c.sMax,    color: '#e8873a', note: `${s.smMin}–${s.smMax} kPa` },
+      { key: 'soft', label: '尺度效应', min: 5,         max: c.softMax, color: '#6b7785', note: '建议 λ ≤ 40', soft: true },
+      { key: 'all',  label: '可行交集', min: c.lambdaMin, max: c.lambdaMax, color: '#2e7d5b', note: c.feasible ? '' : '无解', thick: true }
+    ];
+    return c;
+  }
+
+  function model(s, lam) {
+    const g = 9.81;
+    const Lm = s.Lp / lam;
+    const Bm = s.Bp / lam;
+    const Tm = s.Tp / lam;
+    const hm = s.hp / lam * 1000;                 // mm
+    const sfm = s.sfp / lam;                      // kPa
+    const EmIdeal = s.Ep * 1000 / lam;            // MPa
+    const EmActual = s.ratio * sfm / 1000;        // MPa
+    const Vm = s.Vp / Math.sqrt(lam);             // m/s
+    const Fm = s.Rp * 1000 / Math.pow(lam, 3);    // N
+    const lcp = charLength(s.Ep * 1e9, s.hp, 0.3, s.rhow, g);
+    const lcmIdeal = lcp / lam;
+    const lcmActual = charLength(EmActual * 1e6, hm / 1000, 0.3, s.rhow, g);
+    const needWidth = Bm + 6 * lcmActual;
+    const testLen = 2 * Lm;
+    const ReP = s.Vp * s.Lp / 1.8e-6;
+    const ReM = Vm * Lm / 1.8e-6;
+    const ratioP = s.Ep * 1e6 / s.sfp;            // E and σ both in kPa
+    const ratioM = s.ratio;
+    const ratioMismatch = ratioP / ratioM;
+    const Fr = s.Vp / Math.sqrt(g * s.Lp);
+
+    return { Lm, Bm, Tm, hm, sfm, EmIdeal, EmActual, Vm, Fm, lcp, lcmIdeal, lcmActual,
+             needWidth, testLen, ReP, ReM, ratioP, ratioM, ratioMismatch, Fr };
+  }
+
+  function getStatus(c, m) {
+    if (!c.feasible) return { cls: 'red', short: '无解', kpiSub: '当前约束无可行 λ' };
+    if (currentLambda < c.lambdaMin - 1e-9 || currentLambda > c.lambdaMax + 1e-9) {
+      return { cls: 'red', short: '越界', kpiSub: `可行窗口 ${fmt(c.lambdaMin)} – ${fmt(c.lambdaMax)}` };
+    }
+    if (m.needWidth > state.Btank + 1e-9) return { cls: 'orange', short: '池宽不足', kpiSub: 'λ 可行，但边界效应超标' };
+    if (m.Vm < state.Vmin - 1e-9 || m.Vm > state.Vmax + 1e-9) return { cls: 'orange', short: '速度越界', kpiSub: '超出拖车稳速范围' };
+    if (m.Fm < 0.1 * state.forceMax || m.Fm > 0.9 * state.forceMax) return { cls: 'orange', short: '力量程', kpiSub: '模型力不在量程 10–90%' };
+    if (nearBoundary(m.hm, state.hmMin, state.hmMax) || nearBoundary(m.sfm, state.smMin, state.smMax)) {
+      return { cls: 'orange', short: '近边界', kpiSub: '冰厚/强度贴近模型冰范围边缘' };
+    }
+    if (currentLambda > c.softMax + 1e-9) return { cls: 'orange', short: '超建议', kpiSub: 'λ 可行，但超出尺度效应建议' };
+    return { cls: 'green', short: '可行', kpiSub: '所有硬约束满足' };
+  }
+
+  /* ============================================================
+     5. 构建输入界面
+     ============================================================ */
+  function fieldHTML(f) {
+    const hasUnit = f.unit && f.unit !== '—';
+    const unit = hasUnit ? `<span class="unit">${f.unit}</span>` : '';
+    const cls = hasUnit ? 'has-unit' : '';
+    return `<label class="field">
+      <span class="field-label"><span>${f.label}</span><em>${f.sym}</em></span>
+      <span class="input-wrap">
+        <input type="number" data-key="${f.key}" id="in-${f.key}"
+          min="${f.min}" max="${f.max}" step="${f.step}" value="${state[f.key]}"
+          class="${cls}" inputmode="decimal" autocomplete="off">
+        ${unit}
+      </span>
+    </label>`;
+  }
+
+  function buildInputs() {
+    const wrap = $('inputGroups');
+    wrap.innerHTML = GROUPS.map(g => {
+      let top = '';
+      if (g.id === 'ice') {
+        top = `<div class="field" style="margin-bottom:9px">
+          <span class="field-label"><span>冰种预设</span><em>preset</em></span>
+          <span class="input-wrap"><select id="iceType">
+            ${Object.entries(ICE_PRESETS).map(([k, v]) => `<option value="${k}">${v.name}</option>`).join('')}
+          </select></span>
+        </div>
+        <p class="hint" id="iceNote"></p>`;
+      }
+      return `<section class="card" data-group="${g.id}"><h3>${g.title}</h3>${top}
+        <div class="field-grid">${g.fields.map(fieldHTML).join('')}</div>
+        ${g.hint ? `<p class="hint">${g.hint}</p>` : ''}
+      </section>`;
+    }).join('');
+
+    // 参数分组 tab
+    const tabs = $('inputTabs');
+    tabs.innerHTML = GROUPS.map(g =>
+      `<button type="button" data-group="${g.id}" role="tab">${g.title}</button>`).join('');
+    tabs.querySelectorAll('button').forEach(b => {
+      b.addEventListener('click', () => setActiveGroup(b.dataset.group));
+    });
+    setActiveGroup(activeGroup);
+
+    // 绑定数字输入
+    wrap.querySelectorAll('input[data-key]').forEach(el => {
+      el.addEventListener('input', onInput);
+      el.addEventListener('blur', onBlur);
+    });
+
+    const sel = $('iceType');
+    sel.value = state.iceType;
+    sel.addEventListener('change', () => {
+      const p = ICE_PRESETS[sel.value];
+      if (!p) return;
+      state.iceType = sel.value;
+      applyingPreset = true;
+      state.hmMin = p.hmMin;
+      state.hmMax = p.hmMax;
+      state.smMin = p.smMin;
+      state.smMax = p.smMax;
+      state.ratio = p.ratio;
+      syncInputs();
+      applyingPreset = false;
+      updateIceNote();
+      saveState();
+      render();
+    });
+
+    updateIceNote();
+  }
+
+  function setActiveGroup(id) {
+    activeGroup = id;
+    document.querySelectorAll('#inputGroups > section').forEach(el => {
+      el.style.display = el.dataset.group === id ? '' : 'none';
+    });
+    document.querySelectorAll('#inputTabs button').forEach(b => {
+      const on = b.dataset.group === id;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+  }
+
+  function onInput(e) {
+    const el = e.currentTarget;
+    const key = el.dataset.key;
+    const v = parseFloat(el.value);
+    if (!Number.isFinite(v)) return;
+    state[key] = v;
+
+    if (ICE_KEYS.includes(key) && !applyingPreset) {
+      state.iceType = 'custom';
+      const sel = $('iceType');
+      if (sel) sel.value = 'custom';
+      updateIceNote();
+    }
+    saveState();
+    render();
+  }
+
+  function onBlur(e) {
+    const el = e.currentTarget;
+    const key = el.dataset.key;
+    const f = FIELD_MAP[key];
+    if (!f) return;
+    let v = parseFloat(el.value);
+    if (!Number.isFinite(v)) v = DEFAULTS[key];
+    v = clamp(v, f.min, f.max);
+
+    // 成对约束的兜底，防止 min > max
+    if (key === 'hmMin') v = Math.min(v, state.hmMax);
+    if (key === 'hmMax') v = Math.max(v, state.hmMin);
+    if (key === 'smMin') v = Math.min(v, state.smMax);
+    if (key === 'smMax') v = Math.max(v, state.smMin);
+    if (key === 'LmMin') v = Math.min(v, state.LmMax);
+    if (key === 'LmMax') v = Math.max(v, state.LmMin);
+    if (key === 'Vmin') v = Math.min(v, state.Vmax);
+    if (key === 'Vmax') v = Math.max(v, state.Vmin);
+
+    el.value = v;
+    state[key] = v;
+    saveState();
+    render();
+  }
+
+  function syncInputs() {
+    GROUPS.forEach(g => g.fields.forEach(f => {
+      const el = $('in-' + f.key);
+      if (el) el.value = state[f.key];
+    }));
+    const sel = $('iceType');
+    if (sel) sel.value = state.iceType;
+    $('lambdaSlider').value = currentLambda;
+    $('lambdaNumber').value = fmt(currentLambda, 1);
+    $('lambdaValue').textContent = fmt(currentLambda, 1);
+  }
+
+  function updateIceNote() {
+    const p = ICE_PRESETS[state.iceType] || ICE_PRESETS.custom;
+    const note = $('iceNote');
+    if (note) {
+      note.innerHTML = `<b>${p.name}：</b>${p.note}` +
+        (state.iceType === 'custom' ? ' 当前为手动参数。' : '');
+    }
+  }
+
+  /* ============================================================
+     6. 渲染：KPI、曲线、约束阶梯、结果、校核、提示
+     ============================================================ */
+  function render() {
+    const c = constraints(state);
+    const m = model(state, currentLambda);
+    renderKPI(c, m);
+    renderCharts(c, m);
+    renderLadder(c);
+    renderVerdict(c, m);
+    renderResults(c, m);
+    renderChecks(c, m);
+    renderNotes(c, m);
+  }
+
+  function renderKPI(c, m) {
+    const st = getStatus(c, m);
+    const cls = st.cls === 'red' ? 'red' : st.cls === 'orange' ? 'orange' : 'green';
+    $('kpiRow').innerHTML = `
+      <div class="kpi orange">
+        <div class="k-label">推荐 λ</div>
+        <div class="k-value">${c.feasible ? fmt(c.recommended, 1) : '—'}</div>
+        <div class="k-sub">${c.feasible ? '可行窗口的几何中心，兼顾上下限余量' : '当前约束无可行解'}</div>
+      </div>
+      <div class="kpi navy">
+        <div class="k-label">可行窗口</div>
+        <div class="k-value">${c.feasible ? `${fmt(c.lambdaMin, 1)} – ${fmt(c.lambdaMax, 1)}` : '无解'}</div>
+        <div class="k-sub">模型尺寸 · 冰厚 · 强度 三条约束的交集</div>
+      </div>
+      <div class="kpi ${cls}">
+        <div class="k-label">当前 λ</div>
+        <div class="k-value">${fmt(currentLambda, 1)} <small>${st.short}</small></div>
+        <div class="k-sub">${st.kpiSub}</div>
+      </div>
+      <div class="kpi green">
+        <div class="k-label">模型主尺度</div>
+        <div class="k-value">${fmt(m.Lm, 2)} <small>m</small></div>
+        <div class="k-sub">冰厚 ${fmt(m.hm, 0)} mm · 强度 ${fmt(m.sfm, 0)} kPa</div>
+      </div>`;
+  }
+
+  /* ---------- 曲线 ---------- */
+  function chartSVG(kind, c, m) {
+    const s = state;
+    const W = CH.W, H = CH.H, ML = CH.ML, MR = CH.MR, MT = CH.MT, MB = CH.MB;
+    const x = lam => ML + (clamp(lam, XMIN, XMAX) - XMIN) / (XMAX - XMIN) * (W - ML - MR);
+    const y = v => MT + (1 - clamp(v, 0, YMAX) / YMAX) * (H - MT - MB);
+
+    const isH = kind === 'h';
+    const color = isH ? '#c0392b' : '#1f4e79';
+    const bandLo = isH ? 20 : 10;
+    const bandHi = isH ? 90 : 100;
+    const unit = isH ? 'mm' : 'kPa';
+    const yLabel = isH ? '模型冰厚 h_m / mm' : '抗弯强度 σ_f,m / kPa';
+    const val = isH ? (lam => s.hp / lam * 1000) : (lam => s.sfp / lam);
+    const clipId = 'clip-' + kind;
+
+    let out = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${yLabel}">`;
+    out += `<defs><clipPath id="${clipId}"><rect x="${ML}" y="${MT}" width="${W - ML - MR}" height="${H - MT - MB}"/></clipPath></defs>`;
+
+    // 网格
+    const xticks = [5, 10, 20, 30, 40, 50, 60, 70];
+    const yticks = [0, 20, 40, 60, 80, 100, 120, 140, 160];
+    xticks.forEach(t => {
+      out += `<line x1="${x(t)}" y1="${MT}" x2="${x(t)}" y2="${H - MB}" stroke="#eef2f6" stroke-width="1"/>`;
+    });
+    yticks.forEach(t => {
+      out += `<line x1="${ML}" y1="${y(t)}" x2="${W - MR}" y2="${y(t)}" stroke="#eef2f6" stroke-width="1"/>`;
+    });
+
+    // 模型冰能力带
+    out += `<rect x="${x(XMIN)}" y="${y(bandHi)}" width="${x(XMAX) - x(XMIN)}" height="${y(bandLo) - y(bandHi)}" fill="#e8b84b" opacity="0.14"/>`;
+    out += `<line x1="${x(XMIN)}" y1="${y(bandHi)}" x2="${x(XMAX)}" y2="${y(bandHi)}" stroke="#c99a2e" stroke-width="1" stroke-dasharray="4 3" opacity="0.8"/>`;
+    out += `<line x1="${x(XMIN)}" y1="${y(bandLo)}" x2="${x(XMAX)}" y2="${y(bandLo)}" stroke="#c99a2e" stroke-width="1" stroke-dasharray="4 3" opacity="0.8"/>`;
+    out += `<text x="${x(XMAX) - 4}" y="${y(bandHi) - 4}" text-anchor="end" font-size="9.5" fill="#9a7a1f">${bandHi}</text>`;
+    out += `<text x="${x(XMAX) - 4}" y="${y(bandLo) + 11}" text-anchor="end" font-size="9.5" fill="#9a7a1f">${bandLo}</text>`;
+
+    // 可行窗口竖带
+    if (c.feasible) {
+      const a = clamp(c.lambdaMin, XMIN, XMAX);
+      const b = clamp(c.lambdaMax, XMIN, XMAX);
+      if (b > a) {
+        out += `<rect x="${x(a)}" y="${MT}" width="${x(b) - x(a)}" height="${H - MT - MB}" fill="#1f7a8c" opacity="0.09"/>`;
+        out += `<line x1="${x(a)}" y1="${MT}" x2="${x(a)}" y2="${H - MB}" stroke="#1f7a8c" stroke-width="1" stroke-dasharray="3 3" opacity="0.55"/>`;
+        out += `<line x1="${x(b)}" y1="${MT}" x2="${x(b)}" y2="${H - MB}" stroke="#1f7a8c" stroke-width="1" stroke-dasharray="3 3" opacity="0.55"/>`;
+      }
+    }
+
+    // 曲线
+    let d = '';
+    const N = 280;
+    for (let i = 0; i <= N; i++) {
+      const lam = XMIN + (XMAX - XMIN) * i / N;
+      const v = Math.min(val(lam), YMAX);
+      d += (i === 0 ? 'M' : 'L') + x(lam).toFixed(2) + ',' + y(v).toFixed(2);
+    }
+    out += `<path d="${d}" fill="none" stroke="${color}" stroke-width="2.6" stroke-linejoin="round" clip-path="url(#${clipId})"/>`;
+
+    // 当前 λ
+    const cx = x(currentLambda);
+    out += `<line x1="${cx}" y1="${MT}" x2="${cx}" y2="${H - MB}" stroke="#0f2740" stroke-width="1" stroke-dasharray="3 3" opacity="0.45"/>`;
+    const cv = val(currentLambda);
+    if (cv <= YMAX) {
+      out += `<circle cx="${cx}" cy="${y(cv)}" r="5" fill="#fff" stroke="${color}" stroke-width="3"/>`;
+      out += `<text x="${cx + 9}" y="${y(cv) - 8}" font-size="10" fill="${color}" font-weight="650"
+        paint-order="stroke" stroke="#fff" stroke-width="3">${fmt(cv, isH ? 0 : 0)} ${unit}</text>`;
+    } else {
+      out += `<path d="M${cx - 5},${MT + 2} L${cx + 5},${MT + 2} L${cx},${MT + 11} Z" fill="${color}"/>`;
+      out += `<text x="${cx + 8}" y="${MT + 12}" font-size="9.5" fill="${color}" paint-order="stroke" stroke="#fff" stroke-width="3">超出量程</text>`;
+    }
+    out += `<text x="${cx}" y="${MT - 5}" text-anchor="middle" font-size="10" fill="#0f2740" font-weight="650"
+      paint-order="stroke" stroke="#fff" stroke-width="3">λ=${fmt(currentLambda, 1)}</text>`;
+
+    // 坐标轴
+    out += `<line x1="${ML}" y1="${H - MB}" x2="${W - MR}" y2="${H - MB}" stroke="#b9c4d0"/>`;
+    out += `<line x1="${ML}" y1="${MT}" x2="${ML}" y2="${H - MB}" stroke="#b9c4d0"/>`;
+    xticks.forEach(t => {
+      out += `<text x="${x(t)}" y="${H - MB + 16}" text-anchor="middle" font-size="10" fill="#7a8794">${t}</text>`;
+    });
+    yticks.forEach(t => {
+      out += `<text x="${ML - 7}" y="${y(t) + 3.5}" text-anchor="end" font-size="10" fill="#7a8794">${t}</text>`;
+    });
+    out += `<text x="${(ML + W - MR) / 2}" y="${H - 7}" text-anchor="middle" font-size="10.5" fill="#66727f">几何缩尺比 λ</text>`;
+    out += `<text x="13" y="${(MT + H - MB) / 2}" text-anchor="middle" font-size="10.5" fill="#66727f"
+      transform="rotate(-90 13 ${(MT + H - MB) / 2})">${yLabel}</text>`;
+
+    out += `</svg>`;
+    return out;
+  }
+
+  function attachChart(containerId, svg, valFn, unit, label) {
+    const wrap = $(containerId);
+    const tip = wrap.querySelector('.tooltip');
+    const old = wrap.querySelector('svg');
+    if (old) old.remove();
+    wrap.insertAdjacentHTML('afterbegin', svg);
+    const svgEl = wrap.querySelector('svg');
+    if (!svgEl) return;
+
+    svgEl.addEventListener('mousemove', e => {
+      const r = svgEl.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width * CH.W;
+      if (px < CH.ML || px > CH.W - CH.MR) { tip.style.opacity = 0; return; }
+      const lam = XMIN + (px - CH.ML) / (CH.W - CH.ML - CH.MR) * (XMAX - XMIN);
+      const v = valFn(lam);
+      tip.innerHTML = `λ = ${fmt(lam, 1)}<br>${label} = ${fmt(v, 1)} ${unit}`;
+      tip.style.left = (e.clientX - r.left) + 'px';
+      tip.style.top = (e.clientY - r.top) + 'px';
+      tip.style.opacity = 1;
+    });
+    svgEl.addEventListener('mouseleave', () => { tip.style.opacity = 0; });
+  }
+
+  function renderCharts(c, m) {
+    attachChart('chartA', chartSVG('h', c, m), lam => state.hp / lam * 1000, 'mm', 'h_m');
+    attachChart('chartB', chartSVG('s', c, m), lam => state.sfp / lam, 'kPa', 'σ_f,m');
+  }
+
+  /* ---------- 约束阶梯 ---------- */
+  function renderLadder(c) {
+    const W = LAD.W, ML = LAD.ML, MR = LAD.MR, MT = LAD.MT, MB = LAD.MB;
+    const x = lam => ML + (clamp(lam, XMIN, XMAX) - XMIN) / (XMAX - XMIN) * (W - ML - MR);
+    const rows = c.rows;
+    const rowH = 36;
+    const totalH = MT + rows.length * rowH + MB;
+
+    let out = `<svg viewBox="0 0 ${W} ${totalH}" role="img" aria-label="约束交集">`;
+
+    if (c.feasible) {
+      const a = x(c.lambdaMin), b = x(c.lambdaMax);
+      out += `<rect x="${a}" y="${MT - 7}" width="${Math.max(0, b - a)}" height="${rows.length * rowH + 6}" fill="#1f7a8c" opacity="0.08"/>`;
+    }
+
+    rows.forEach((r, i) => {
+      const cy = MT + i * rowH + 8;
+      out += `<line x1="${x(XMIN)}" y1="${cy}" x2="${x(XMAX)}" y2="${cy}" stroke="#e9eef4" stroke-width="3" stroke-linecap="round"/>`;
+
+      if (r.min <= r.max) {
+        const a = x(r.min), b = x(r.max);
+        out += `<line x1="${a}" y1="${cy}" x2="${b}" y2="${cy}" stroke="${r.color}" stroke-width="${r.thick ? 11 : 8}" stroke-linecap="round" opacity="${r.soft ? 0.55 : 0.9}"/>`;
+        out += `<text x="${a}" y="${cy - 11}" text-anchor="middle" font-size="9.5" fill="${r.color}">${fmt(r.min, 1)}</text>`;
+        out += `<text x="${b}" y="${cy - 11}" text-anchor="middle" font-size="9.5" fill="${r.color}">${fmt(r.max, 1)}</text>`;
+      } else {
+        out += `<text x="${x(XMIN) + 8}" y="${cy + 4}" font-size="11" fill="#c0392b" font-weight="700">无解</text>`;
+      }
+
+      out += `<text x="${ML - 12}" y="${cy + 4}" text-anchor="end" font-size="11.5" fill="${r.thick ? '#0f2740' : '#33414f'}" font-weight="${r.thick ? 700 : 500}">${r.label}</text>`;
+      if (r.note) {
+        out += `<text x="${ML - 12}" y="${cy + 16}" text-anchor="end" font-size="8.5" fill="#8a97a6">${r.note}</text>`;
+      }
+    });
+
+    // 当前 λ 竖线
+    const cx = x(currentLambda);
+    const top = MT - 8;
+    const bottom = MT + rows.length * rowH;
+    out += `<line x1="${cx}" y1="${top}" x2="${cx}" y2="${bottom}" stroke="#0f2740" stroke-width="1.2" stroke-dasharray="3 3" opacity="0.6"/>`;
+    out += `<text x="${cx}" y="${MT - 12}" text-anchor="middle" font-size="10" fill="#0f2740" font-weight="650">λ=${fmt(currentLambda, 1)}</text>`;
+
+    // x 轴
+    const axisY = bottom + 6;
+    out += `<line x1="${x(XMIN)}" y1="${axisY}" x2="${x(XMAX)}" y2="${axisY}" stroke="#c8d2dc"/>`;
+    [5, 10, 20, 30, 40, 50, 60, 70].forEach(t => {
+      out += `<line x1="${x(t)}" y1="${axisY}" x2="${x(t)}" y2="${axisY + 4}" stroke="#c8d2dc"/>`;
+      out += `<text x="${x(t)}" y="${axisY + 16}" text-anchor="middle" font-size="9.5" fill="#7a8794">${t}</text>`;
+    });
+
+    out += `</svg>`;
+    $('ladder').innerHTML = out;
+  }
+
+  /* ---------- 结果表 ---------- */
+  function renderResults(c, m) {
+    const rows = [
+      ['模型船长 L_m', `${fmt(m.Lm, 2)} m`],
+      ['模型船宽 B_m', `${fmt(m.Bm, 2)} m`],
+      ['模型吃水 T_m', `${fmt(m.Tm, 2)} m`],
+      ['模型冰厚 h_m', `${fmt(m.hm, 1)} mm`],
+      ['抗弯强度 σ_f,m', `${fmt(m.sfm, 1)} kPa`],
+      ['弹模 E_m（理想）', `${fmt(m.EmIdeal, 1)} MPa`],
+      ['弹模 E_m（按 E/σ）', `${fmt(m.EmActual, 1)} MPa`],
+      ['模型速度 V_m', `${fmt(m.Vm, 3)} m/s`],
+      ['模型阻力 F_m', `${fmt(m.Fm, 1)} N`],
+      ['冰特征长度 l_c,m', `${fmt(m.lcmActual, 2)} m`],
+      ['所需池宽', `${fmt(m.needWidth, 2)} m`],
+      ['测试段 2L_m', `${fmt(m.testLen, 2)} m`],
+      ['Re_m', `${m.ReM.toExponential(2)}`],
+      ['原型/模型 E/σ', `${fmt(m.ratioP, 0)} / ${fmt(m.ratioM, 0)}`]
+    ];
+    $('resultList').innerHTML = rows.map(([k, v]) =>
+      `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+  }
+
+  /* ---------- 逐项校核 ---------- */
+  function renderChecks(c, m) {
+    const s = state;
+    const items = [];
+    const push = (ok, label, text) => items.push({ ok, label, text });
+
+    push(m.Lm >= s.LmMin - 1e-9 && m.Lm <= s.LmMax + 1e-9, '模型尺寸',
+      `L_m = ${fmt(m.Lm, 2)} m <span>（允许 ${s.LmMin}–${s.LmMax} m）</span>`);
+    push(m.hm >= s.hmMin - 1e-9 && m.hm <= s.hmMax + 1e-9, '模型冰厚',
+      `h_m = ${fmt(m.hm, 1)} mm <span>（允许 ${s.hmMin}–${s.hmMax} mm）</span>`);
+    push(m.sfm >= s.smMin - 1e-9 && m.sfm <= s.smMax + 1e-9, '抗弯强度',
+      `σ_f,m = ${fmt(m.sfm, 1)} kPa <span>（允许 ${s.smMin}–${s.smMax} kPa）</span>`);
+    push(m.needWidth <= s.Btank + 1e-9, '池宽/边界效应',
+      `需要 ${fmt(m.needWidth, 2)} m <span>（池宽 ${s.Btank} m）</span>`);
+    push(m.testLen + 2 <= s.Ltank + 1e-9, '测试段长度',
+      `2L_m = ${fmt(m.testLen, 1)} m <span>（池长 ${s.Ltank} m）</span>`);
+    push(m.Vm >= s.Vmin - 1e-9 && m.Vm <= s.Vmax + 1e-9, '拖车速度',
+      `V_m = ${fmt(m.Vm, 3)} m/s <span>（${s.Vmin}–${s.Vmax} m/s）</span>`);
+    push(m.Fm >= 0.1 * s.forceMax && m.Fm <= 0.9 * s.forceMax, '测力量程',
+      `F_m = ${fmt(m.Fm, 1)} N <span>（量程 ${s.forceMax} N 的 10–90%）</span>`);
+    push(4 * m.Tm <= s.Dtank + 1e-9, '水池深度',
+      `4T_m = ${fmt(4 * m.Tm, 2)} m <span>（水深 ${s.Dtank} m）</span>`);
+    push(currentLambda <= c.softMax + 1e-9, '尺度效应',
+      `λ = ${fmt(currentLambda, 1)} <span>（建议 ≤ ${c.softMax}）</span>`);
+
+    const emState = m.ratioMismatch <= 1.5 ? true : (m.ratioMismatch <= 2.5 ? 'warn' : false);
+    push(emState, 'E/σ 匹配',
+      `原型 ${fmt(m.ratioP, 0)} / 模型 ${fmt(m.ratioM, 0)} <span>（相差 ${fmt(m.ratioMismatch, 1)}×）</span>`);
+
+    $('checkList').innerHTML = items.map(it => {
+      const cls = it.ok === true ? 'ok' : it.ok === 'warn' ? 'warn' : 'bad';
+      return `<div class="check-item"><span class="dot ${cls}"></span>
+        <div class="check-text"><b>${it.label}</b> · ${it.text}</div></div>`;
+    }).join('');
+  }
+
+  /* ---------- 结论条 ---------- */
+  function renderVerdict(c, m) {
+    const el = $('verdict');
+    let cls = 'good';
+    let html = '';
+
+    if (!c.feasible) {
+      cls = 'bad';
+      html = `<strong>无可行 λ。</strong> 当前约束的 λ 下限 ${fmt(c.lambdaMin, 1)} 大于上限 ${fmt(c.lambdaMax, 1)}。请调整设施或模型冰范围，或重新核对原型冰条件。`;
+    } else if (currentLambda < c.lambdaMin - 1e-9 || currentLambda > c.lambdaMax + 1e-9) {
+      cls = 'bad';
+      html = `<strong>当前 λ = ${fmt(currentLambda, 1)} 不可行。</strong> 可行窗口为 ${fmt(c.lambdaMin, 1)} – ${fmt(c.lambdaMax, 1)}；推荐 λ = ${fmt(c.recommended, 1)}。`;
+    } else if (m.needWidth > state.Btank + 1e-9 || m.Vm < state.Vmin - 1e-9 ||
+               m.Vm > state.Vmax + 1e-9 || m.Fm < 0.1 * state.forceMax || m.Fm > 0.9 * state.forceMax) {
+      cls = 'warn';
+      html = `<strong>λ = ${fmt(currentLambda, 1)} 在几何/冰参数上可行，但设施校核未全部通过。</strong> 请查看下方“逐项校核”中的红色或黄色项。`;
+    } else if (currentLambda > c.softMax + 1e-9) {
+      cls = 'warn';
+      html = `<strong>λ = ${fmt(currentLambda, 1)} 可行，但超出尺度效应建议上限（${c.softMax}）。</strong> 建议优先取 ${fmt(c.recommended, 1)}，或做多尺度验证。`;
+    } else if (nearBoundary(m.hm, state.hmMin, state.hmMax) || nearBoundary(m.sfm, state.smMin, state.smMax)) {
+      cls = 'warn';
+      html = `<strong>λ = ${fmt(currentLambda, 1)} 可行，但模型冰参数贴近可行边界。</strong> 当前 h_m = ${fmt(m.hm, 1)} mm、σ_f,m = ${fmt(m.sfm, 1)} kPa；建议留 10–20% 余量，避免制冰偏差把工况推出可行区。`;
+    } else {
+      cls = 'good';
+      html = `<strong>λ = ${fmt(currentLambda, 1)} 可行。</strong> 模型冰厚 ${fmt(m.hm, 1)} mm、抗弯强度 ${fmt(m.sfm, 1)} kPa、模型速度 ${fmt(m.Vm, 3)} m/s。`;
+    }
+
+    el.className = 'verdict ' + cls;
+    el.innerHTML = html;
+  }
+
+  /* ---------- 提示 ---------- */
+  function bindingLabel(c) {
+    const lows = [['模型尺寸', c.geomMin], ['冰厚上限', c.hMin], ['强度上限', c.sMin]];
+    const highs = [['模型尺寸', c.geomMax], ['冰厚下限', c.hMax], ['强度下限', c.sMax]];
+    lows.sort((a, b) => b[1] - a[1]);
+    highs.sort((a, b) => a[1] - b[1]);
+    return `下限由「${lows[0][0]}」控制（${fmt(lows[0][1], 1)}），上限由「${highs[0][0]}」控制（${fmt(highs[0][1], 1)}）`;
+  }
+
+  function renderNotes(c, m) {
+    const notes = [];
+
+    if (!c.feasible) {
+      notes.push({
+        type: 'bad',
+        html: `<b>当前约束无可行 λ。</b> ${bindingLabel(c)}。可尝试：增大水池或最大模型长度、放宽模型冰厚度/强度范围、换用 E/σ 更高或能做得更薄的冰种。`
+      });
+    } else if (currentLambda < c.lambdaMin - 1e-9 || currentLambda > c.lambdaMax + 1e-9) {
+      const bound = currentLambda < c.lambdaMin ? c.lambdaMin : c.lambdaMax;
+      notes.push({
+        type: 'bad',
+        html: `<b>当前 λ = ${fmt(currentLambda, 1)} 不在可行窗口内。</b> 最近的可行值是 ${fmt(bound, 1)}。` +
+          (currentLambda < c.lambdaMin
+            ? ' λ 偏小：模型太大，或冰太厚/太强。'
+            : ' λ 偏大：冰太薄/太弱，或模型太小。')
+      });
+    }
+
+    if (c.feasible && currentLambda > c.softMax + 1e-9) {
+      notes.push({
+        type: 'warn',
+        html: `<b>λ 超出尺度效应建议上限（${c.softMax}）。</b> 模型冰的 E/σ、压缩强度、断裂韧性和应变率偏差会放大；建议做第二尺度验证或数值外推。`
+      });
+    }
+
+    if (c.feasible && (c.lambdaMin > 70 || c.recommended > 70)) {
+      notes.push({
+        type: 'warn',
+        html: `<b>可行窗口超出当前图表/滑杆范围（5–70）。</b> λ_min = ${fmt(c.lambdaMin, 1)}，推荐 λ = ${c.recommended ? fmt(c.recommended, 1) : '—'}。请检查输入，或扩展工具范围。`
+      });
+    }
+
+    if (m.ratioMismatch > 1.5) {
+      const lcLoss = 100 * (1 - Math.pow(1 / m.ratioMismatch, 0.25));
+      notes.push({
+        type: 'warn',
+        html: `<b>E/σ 不匹配：</b>原型 E/σ ≈ ${fmt(m.ratioP, 0)}，模型冰 ≈ ${fmt(m.ratioM, 0)}，相差 ${fmt(m.ratioMismatch, 1)} 倍。按 Cauchy 理想值 E_m = ${fmt(m.EmIdeal, 1)} MPa，而按当前 E/σ 只有 ${fmt(m.EmActual, 1)} MPa。冰的特征长度会偏小约 ${fmt(lcLoss, 0)}%。换 λ 解决不了，建议换高 E/σ 冰种或在报告中量化。`
+      });
+    }
+
+    if (m.hm < 25) {
+      notes.push({
+        type: 'warn',
+        html: `<b>模型冰偏薄（${fmt(m.hm, 1)} mm）。</b> 厚度测量相对误差和强度代表性会变差；ITTC 建议厚度测量精度约 1 mm。`
+      });
+    }
+
+    if (m.sfm < 20) {
+      notes.push({
+        type: 'warn',
+        html: `<b>模型冰偏弱（${fmt(m.sfm, 1)} kPa）。</b> 低于约 10–20 kPa 时容易出现不真实的残余强度和韧性破坏，阻力可能偏高。`
+      });
+    }
+
+    if (nearBoundary(m.hm, state.hmMin, state.hmMax) || nearBoundary(m.sfm, state.smMin, state.smMax)) {
+      notes.push({
+        type: 'warn',
+        html: `<b>接近可行边界：</b>当前冰厚 ${fmt(m.hm, 1)} mm（范围 ${state.hmMin}–${state.hmMax} mm）、强度 ${fmt(m.sfm, 1)} kPa（范围 ${state.smMin}–${state.smMax} kPa）。建议留 10–20% 余量，避免制冰偏差把工况推出可行区。`
+      });
+    }
+
+    if (m.needWidth > state.Btank + 1e-9) {
+      notes.push({
+        type: 'warn',
+        html: `<b>池宽不足：</b>按 l_c,m = ${fmt(m.lcmActual, 2)} m，需要池宽 ≥ ${fmt(m.needWidth, 2)} m，当前 ${state.Btank} m。可增大 λ（做小模型）或换更宽的池；减小 λ 反而会让 l_c,m 更大。`
+      });
+    }
+
+    if (m.testLen + 2 > state.Ltank + 1e-9) {
+      notes.push({
+        type: 'warn',
+        html: `<b>测试段不足：</b>2L_m = ${fmt(m.testLen, 1)} m，池长 ${state.Ltank} m。ITTC 建议至少 2 倍船长，另留进出冰排的余量。`
+      });
+    }
+
+    if (m.Vm < state.Vmin - 1e-9 || m.Vm > state.Vmax + 1e-9) {
+      notes.push({
+        type: 'warn',
+        html: `<b>模型速度越界：</b>V_m = ${fmt(m.Vm, 3)} m/s，拖车范围 ${state.Vmin}–${state.Vmax} m/s。`
+      });
+    }
+
+    if (m.Fm < 0.1 * state.forceMax || m.Fm > 0.9 * state.forceMax) {
+      notes.push({
+        type: 'warn',
+        html: `<b>模型力不在量程的 10–90%：</b>F_m = ${fmt(m.Fm, 1)} N，量程 ${state.forceMax} N。信噪比或过载风险需要复核。`
+      });
+    }
+
+    $('notes').innerHTML = notes.map(n => `<div class="note ${n.type}">${n.html}</div>`).join('');
+  }
+
+  /* ============================================================
+     7. λ 控制与交互
+     ============================================================ */
+  function setLambda(v, silent) {
+    const old = currentLambda;
+    currentLambda = clamp(Number(v) || 25, 5, 70);
+    $('lambdaSlider').value = currentLambda;
+    $('lambdaNumber').value = fmt(currentLambda, 1);
+    $('lambdaValue').textContent = fmt(currentLambda, 1);
+    if (!silent) saveState();
+    render();
+    return old;
+  }
+
+  function bindEvents() {
+    $('lambdaSlider').addEventListener('input', e => setLambda(e.target.value, true));
+    $('lambdaSlider').addEventListener('change', () => saveState());
+
+    $('lambdaNumber').addEventListener('change', e => {
+      let v = parseFloat(e.target.value);
+      if (!Number.isFinite(v)) v = currentLambda;
+      if (v < 5 || v > 70) showToast('λ 超出 5–70，已自动收拢到边界');
+      setLambda(v);
+    });
+
+    $('btnMinus').addEventListener('click', () => setLambda(currentLambda - 0.5));
+    $('btnPlus').addEventListener('click', () => setLambda(currentLambda + 0.5));
+
+    $('btnAuto').addEventListener('click', () => {
+      const c = constraints(state);
+      if (!c.feasible) {
+        showToast('当前约束无可行 λ，请先调整参数');
+        return;
+      }
+      if (c.recommended > 70) {
+        showToast('推荐 λ 超出 70，请检查输入或扩展工具范围');
+        return;
+      }
+      setLambda(Math.round(c.recommended * 10) / 10);
+      showToast(`已采用推荐 λ = ${fmt(c.recommended, 1)}`);
+    });
+
+    $('btnReset').addEventListener('click', () => {
+      state = deepCopy(DEFAULTS);
+      currentLambda = 25;
+      syncInputs();
+      updateIceNote();
+      setActiveGroup('proto');
+      saveState();
+      render();
+      showToast('已恢复默认参数');
+    });
+
+    $('btnPrint').addEventListener('click', () => window.print());
+
+    $('btnCopy').addEventListener('click', copySummary);
+
+    // 理论弹窗
+    $('btnTheory').addEventListener('click', openTheory);
+    $('btnCloseTheory').addEventListener('click', closeTheory);
+    $('theoryModal').addEventListener('click', e => {
+      if (e.target === $('theoryModal')) closeTheory();
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && !$('theoryModal').hidden) closeTheory();
+    });
+  }
+
+  /* ============================================================
+     8. 复制摘要 / 弹窗 / toast
+     ============================================================ */
+  function copySummary() {
+    const c = constraints(state);
+    const m = model(state, currentLambda);
+    const st = getStatus(c, m);
+    const lines = [
+      '冰池缩尺比设计摘要',
+      '----------------------------------------',
+      `原型：L_p=${state.Lp} m, B_p=${state.Bp} m, T_p=${state.Tp} m, h_p=${state.hp} m`,
+      `      σ_f,p=${state.sfp} kPa, E_p=${state.Ep} GPa, V_p=${state.Vp} m/s`,
+      `设施：${state.Ltank}×${state.Btank}×${state.Dtank} m, 模型长 ${state.LmMin}–${state.LmMax} m`,
+      `模型冰：${ICE_PRESETS[state.iceType] ? ICE_PRESETS[state.iceType].name : state.iceType}`,
+      `        h_m ${state.hmMin}–${state.hmMax} mm, σ_f,m ${state.smMin}–${state.smMax} kPa, E/σ=${state.ratio}`,
+      '----------------------------------------',
+      `可行窗口：λ = ${c.feasible ? `${fmt(c.lambdaMin, 1)} – ${fmt(c.lambdaMax, 1)}` : '无解'}`,
+      `推荐 λ：${c.feasible ? fmt(c.recommended, 1) : '—'}`,
+      `当前 λ：${fmt(currentLambda, 1)}（${st.short}）`,
+      `模型：L_m=${fmt(m.Lm, 2)} m, B_m=${fmt(m.Bm, 2)} m, T_m=${fmt(m.Tm, 2)} m`,
+      `      h_m=${fmt(m.hm, 1)} mm, σ_f,m=${fmt(m.sfm, 1)} kPa`,
+      `      E_m(理想)=${fmt(m.EmIdeal, 1)} MPa, E_m(按 E/σ)=${fmt(m.EmActual, 1)} MPa`,
+      `      V_m=${fmt(m.Vm, 3)} m/s, F_m=${fmt(m.Fm, 1)} N`,
+      `      l_c,m=${fmt(m.lcmActual, 2)} m, 需要池宽=${fmt(m.needWidth, 2)} m`,
+      `校核：E/σ 相差 ${fmt(m.ratioMismatch, 1)}×；尺度效应 ${currentLambda <= c.softMax ? '在建议范围内' : '超出建议上限'}`,
+      '----------------------------------------',
+      '由“冰池缩尺比设计器”生成；仅供方案筛选。'
+    ];
+    const text = lines.join('\n');
+
+    const done = () => showToast('设计摘要已复制到剪贴板');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+    } else {
+      fallbackCopy(text, done);
+    }
+  }
+
+  function fallbackCopy(text, done) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      done();
+    } catch (e) {
+      showToast('复制失败，请手动选择文本');
+    }
+  }
+
+  function openTheory() {
+    $('theoryModal').hidden = false;
+    document.body.style.overflow = 'hidden';
+    $('btnCloseTheory').focus();
+  }
+
+  function closeTheory() {
+    $('theoryModal').hidden = true;
+    document.body.style.overflow = '';
+  }
+
+  let toastTimer = null;
+  function showToast(msg) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  /* ============================================================
+     9. 初始化
+     ============================================================ */
+  buildInputs();
+  syncInputs();
+  bindEvents();
+  render();
+
+  /* ============================================================
+     10. 自检（?selftest=1）
+     ============================================================ */
+  window.__selfTest = function () {
+    const saved = deepCopy(state);
+    const savedLam = currentLambda;
+    const results = [];
+    const check = (name, cond, detail) => results.push({ name, pass: !!cond, detail: String(detail) });
+
+    Object.assign(state, DEFAULTS);
+    let c = constraints(state);
+    check('default λ_min = 20', Math.abs(c.lambdaMin - 20) < 0.01, c.lambdaMin);
+    check('default λ_max = 40', Math.abs(c.lambdaMax - 40) < 0.01, c.lambdaMax);
+    check('default rec = 28.28', Math.abs(c.recommended - Math.sqrt(800)) < 0.01, c.recommended);
+
+    Object.assign(state, DEFAULTS, { hp: 0.5, sfp: 500 });
+    c = constraints(state);
+    check('thin λ_min = 20', Math.abs(c.lambdaMin - 20) < 0.01, c.lambdaMin);
+    check('thin λ_max = 25', Math.abs(c.lambdaMax - 25) < 0.01, c.lambdaMax);
+
+    Object.assign(state, DEFAULTS, { Lp: 150, hp: 1.5, sfp: 1500 });
+    c = constraints(state);
+    check('thick λ_min = 25', Math.abs(c.lambdaMin - 25) < 0.01, c.lambdaMin);
+    check('thick λ_max = 50', Math.abs(c.lambdaMax - 50) < 0.01, c.lambdaMax);
+    check('thick rec = 31.62', Math.abs(c.recommended - Math.sqrt(1000)) < 0.01, c.recommended);
+
+    Object.assign(state, DEFAULTS, { Lp: 300, hp: 0.3, sfp: 300 });
+    c = constraints(state);
+    check('infeasible detected', !c.feasible, `${c.lambdaMin} > ${c.lambdaMax}`);
+
+    Object.assign(state, DEFAULTS);
+    const m = model(state, 25);
+    check('L_m = 4.8', Math.abs(m.Lm - 4.8) < 0.001, m.Lm);
+    check('h_m = 48', Math.abs(m.hm - 48) < 0.01, m.hm);
+    check('σ_f,m = 28', Math.abs(m.sfm - 28) < 0.01, m.sfm);
+    check('E_m ideal = 200', Math.abs(m.EmIdeal - 200) < 0.01, m.EmIdeal);
+    check('E/σ prototype ≈ 7143', Math.abs(m.ratioP - 7142.857) < 1, m.ratioP);
+
+    state = saved;
+    currentLambda = savedLam;
+    syncInputs();
+    updateIceNote();
+    render();
+    return results;
+  };
+
+  if (new URLSearchParams(location.search).has('selftest')) {
+    const pre = document.createElement('pre');
+    pre.id = 'selftest';
+    pre.style.cssText = 'position:fixed;left:0;top:0;z-index:9999;background:#fff;padding:12px;font-size:12px;max-height:100vh;overflow:auto;border:1px solid #ccc';
+    pre.textContent = JSON.stringify(window.__selfTest(), null, 2);
+    document.body.appendChild(pre);
+  }
+})();
+</script>
+</body>
+</html>
